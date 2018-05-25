@@ -118,7 +118,7 @@ begin
   tmrSetScript.Enabled := False;
   tmrAuthStatus.Enabled := False;
 
-  updateStatus(auth_undefined);
+//  updateStatus(auth_undefined);
 //  ComboBoxValue1.Text := '';
 end;
 
@@ -306,7 +306,7 @@ var
   res: String;
 begin
 //  tmrMain.Interval := 1800000; // meia hora
-//  tmrMain.Interval := 3600000;
+  tmrMain.Interval := 3600000;
   if flagMain then
   begin
     TThread.CreateAnonymousThread(
@@ -316,17 +316,17 @@ begin
           try
             flagMain := False;
             res := idhttp1.Get(checkUrl);
-            if idhttp1.ResponseCode = 200 then
-            begin
-              TThread.Synchronize(
-                nil,
-                procedure
-                begin
-                  updateStatus(AUTH_YES);
-                end
-              );
-              flagAuth := True;
-            end;
+//            if idhttp1.ResponseCode = 200 then
+//            begin
+//              TThread.Synchronize(
+//                nil,
+//                procedure
+//                begin
+//                  updateStatus(AUTH_YES);
+//                end
+//              );
+//              flagAuth := True;
+//            end;
           finally
             idhttp1.Disconnect;
             flagMain := True;
@@ -376,7 +376,7 @@ end;
 procedure TForm1.btn2Click(Sender: TObject);
 begin
   activateForm(True);
-  updateStatus(auth_yes);
+
 end;
 
 end.
