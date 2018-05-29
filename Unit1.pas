@@ -48,6 +48,7 @@ type
     procedure mnieste1Click(Sender: TObject);
     procedure activateForm(sta: Boolean);
     procedure updateStatus(status: TauthCP);
+    procedure writeLog(log: string);
 
     function execute(script: string): Boolean;
     function getElementValueById(Id : string):string;
@@ -63,8 +64,9 @@ type
   private
     { Private declarations }
   public
-    flagAuth: Boolean;
+    flagAuth: Boolean;  // setados no create
     flagMain: Boolean;
+    flagLog:  Boolean;
     contAuth: Integer;
     contMain: Integer;
     log: TStringList;
@@ -76,9 +78,9 @@ var
   CGID_DocHostCommandHandler: PGUID;
 
   checkUrl: string = 'http://www.youtube.com';
-  authUrl: string = 'http://10.12.5.254/hotspot/PortalMain/';
-  authRegex: string = '^\D+10\.12\.5\.254\/hotspot\/PortalMain';    // regex do hotpost
-  blockRegex: string = '^\D+10\.12\.5\.254\/UserCheck\/PortalMain'; // regex do usercheck
+  authUrl: string = 'http://'+chr(49)+chr(48)+chr(46)+chr(49)+chr(50)+chr(46)+chr(53)+chr(46)+chr(50)+chr(53)+chr(52)+'/hotspot/PortalMain/';
+  authRegex: string =  '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/hotspot\/PortalMain';    // regex do hotpost
+  blockRegex: string = '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/UserCheck\/PortalMain'; // regex do usercheck
 
 implementation
 
@@ -103,6 +105,7 @@ begin
 
   flagAuth := False; // user autenticado
   flagMain := True;  // flag do timer principal
+  flagLog  := true; // flag grava log em disco
   contAuth := 0;     // tentativas de login
   contMain := 0;     //
   log := TStringlist.Create;
@@ -118,8 +121,7 @@ begin
   tmrSetScript.Enabled := False;
   tmrAuthStatus.Enabled := False;
 
-//  updateStatus(auth_undefined);
-//  ComboBoxValue1.Text := '';
+  writeLog('sdsafds');
 end;
 
 procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -197,6 +199,30 @@ begin
       label4.Caption := '';
       trycn1.IconIndex := 0;
     end;
+  end;
+end;
+
+procedure TForm1.writeLog(log: string);
+var
+  local: string;
+  tFile: TextFile;
+  dt: TDateTime;
+begin
+  if flagLog then
+  begin
+    dt := Now;
+    local := 'log'+DateTimeToStr(dt, 'DDMMAAHHMMSS');
+    Assignfile(tFile, local);
+    if not FileExists(local) Then
+      begin
+        Rewrite(tFile);
+      end
+    else
+    begin
+      Append(tFile);
+    end;
+    Writeln(tFile, local);
+    Closefile(tFile);
   end;
 end;
 
