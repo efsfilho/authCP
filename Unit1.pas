@@ -41,6 +41,7 @@ type
     tmrMain: TTimer;
     btn2: TButton;
     il1: TImageList;
+    chk1: TCheckBox;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure trycn1Click(Sender: TObject);
@@ -121,7 +122,6 @@ begin
   tmrSetScript.Enabled := False;
   tmrAuthStatus.Enabled := False;
 
-  writeLog('sdsafds');
 end;
 
 procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -181,6 +181,14 @@ begin
       label4.Caption := 'Off';
       trycn1.IconIndex := 2;
       flagAuth := False;
+      if chk1.Checked then
+      begin
+        writelog('off');
+        if not flagAuth then
+        begin
+          btn1.Click;
+        end;
+      end;
     end;
     AUTH_UNDEFINED:
     begin
@@ -200,18 +208,21 @@ begin
       trycn1.IconIndex := 0;
     end;
   end;
+
+
 end;
 
 procedure TForm1.writeLog(log: string);
 var
   local: string;
   tFile: TextFile;
-  dt: TDateTime;
 begin
   if flagLog then
   begin
-    dt := Now;
-    local := 'log'+DateTimeToStr(dt, 'DDMMAAHHMMSS');
+//    local := 'log'+DateTimeToStr(Now, 'DDMMAAHHMMSS');
+    local := 'log_'+FormatDateTime('YYYYMMDD_HHMMSS', Now)+'.txt';
+
+
     Assignfile(tFile, local);
     if not FileExists(local) Then
       begin
@@ -221,7 +232,7 @@ begin
     begin
       Append(tFile);
     end;
-    Writeln(tFile, local);
+    Writeln(tFile, log);
     Closefile(tFile);
   end;
 end;
@@ -402,7 +413,7 @@ end;
 procedure TForm1.btn2Click(Sender: TObject);
 begin
   activateForm(True);
-
+  
 end;
 
 end.
