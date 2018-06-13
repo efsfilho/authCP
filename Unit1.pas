@@ -102,6 +102,8 @@ begin
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
+var
+  st: TStringList;
 begin
 
   flagAuth := False; // user autenticado
@@ -122,6 +124,18 @@ begin
   tmrSetScript.Enabled := False;
   tmrAuthStatus.Enabled := False;
 
+  if FileExists('spi') then
+  begin
+    st := TStringList.Create;
+    st.LoadFromFile('spi');
+    st.Text := StringOf(TEncoding.Convert(TEncoding.UTF8, TEncoding.Unicode, BytesOf(st.Text)));
+    if StrToBool(st[0]) then
+    begin
+      chk1.Checked := True;
+      edit1.Text := st[1];
+      edit2.Text := st[2];
+    end;
+  end;
 end;
 
 procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -310,6 +324,7 @@ begin
   if isAuth <> '' then
   begin
     label1.Caption := isAuth;
+
     tmrAuthStatus.Enabled := False;
     if isAuth = 'FAILURE' then
     begin
@@ -343,7 +358,8 @@ var
   res: String;
 begin
 //  tmrMain.Interval := 1800000; // meia hora
-  tmrMain.Interval := 3600000;
+//  tmrMain.Interval := 3600000;
+  tmrMain.Interval := 10000;
   if flagMain then
   begin
     TThread.CreateAnonymousThread(
@@ -399,15 +415,26 @@ end;
 
 procedure TForm1.btn1Click(Sender: TObject);
 var
-  user: string;
-  pass: String;
+  u: string;
+  p: String;
+  st: TStringList;
 begin
-  user := '"'+edit1.Text+'"';
-  pass := '"'+edit2.Text+'"';
-  execute('auth({id:'+user+', pass:'+pass+'})');
-  tmrAuthStatus.Enabled := true;
-  label1.Caption := '...';
-  activateForm(False);
+  u := '"'+edit1.Text+'"';
+  p := '"'+edit2.Text+'"';
+  execute('auth({id:'+u+', pass:'+p+'})');
+  if not tmrAuthStatus.Enabled then
+  begin
+    tmrAuthStatus.Enabled := true;
+    label1.Caption := '...';
+    activateForm(False);
+  end;
+
+  st := TStringList.Create;
+  st.Add(BoolToStr(chk1.Checked));
+  st.Add(u);
+  st.Add(p);
+  st.Text := StringOf(TEncoding.Convert(TEncoding.Unicode, TEncoding.UTF8, BytesOf(st.Text)));
+  st.SaveToFile('spi');
 end;
 
 procedure TForm1.btn2Click(Sender: TObject);
