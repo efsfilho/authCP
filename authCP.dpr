@@ -6,7 +6,8 @@ uses
   Windows,
   SysUtils,
   Vcl.Forms,
-  Unit1 in 'Unit1.pas' {Form1};
+  Unit1 in 'Unit1.pas' {MainForm},
+  Unit2 in 'Unit2.pas';
 
 {$R *.res}
 
@@ -23,7 +24,7 @@ begin
 
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
-  Application.CreateForm(TForm1, Form1);
+  Application.CreateForm(TMainForm, MainForm);
   Application.ShowMainForm := False;
   Application.Run;
 end.

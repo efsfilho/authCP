@@ -5,11 +5,11 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.AppEvnts, Vcl.StdCtrls,
-  Vcl.Menus, Vcl.OleCtrls, SHDocVw, Winapi.Activex, MSHTML, System.RegularExpressions,
+  Vcl.Menus, Vcl.OleCtrls, System.RegularExpressions, SHDocVw, Winapi.Activex, MSHTML,
   IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, idHttp,
   IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL,
   Vcl.ImgList, frxCtrls, Data.Bind.Components, Data.Bind.ObjectScope,
-  REST.Client, REST.Authenticator.Basic, ComboBoxValue;
+  REST.Client, REST.Authenticator.Basic, ComboBoxValue, Unit2;
 
 type
 
@@ -19,9 +19,9 @@ type
     function QueryStatus(CmdGroup: PGUID; cCmds: Cardinal; prgCmds: POleCmd; CmdText: POleCmdText): HResult; stdcall;
     function Exec(CmdGroup: PGUID; nCmdID, nCmdexecopt: DWORD; const vaIn: OleVariant; var vaOut: OleVariant): HResult; stdcall;
   end;
-  TAuthCP = (AUTH_YES, AUTH_NO, AUTH_UNDEFINED, AUTH_DEFAULT);
+//  TAuthCP = (AUTH_YES, AUTH_NO, AUTH_UNDEFINED, AUTH_DEFAULT);
 
-  TForm1 = class(TForm)
+  TMainForm = class(TForm)
     trycn1: TTrayIcon;
     btn1: TButton;
     pm1: TPopupMenu;
@@ -51,8 +51,8 @@ type
     procedure updateStatus(status: TauthCP);
     procedure writeLog(log: string);
 
-    function execute(script: string): Boolean;
-    function getElementValueById(Id : string):string;
+//    function execute(script: string): Boolean;
+//    function getElementValueById(Id : string):string;
     procedure WebBrowser1NavigateComplete2(ASender: TObject; const pDisp: IDispatch; const URL: OleVariant);
     procedure tmrMainTimer(Sender: TObject);
     procedure IdHTTP1Redirect(Sender: TObject; var dest: string; var NumRedirect: Integer; var Handled: Boolean; var VMethod: string);
@@ -74,14 +74,14 @@ type
   end;
 
 var
-  Form1: TForm1;
+  MainForm: TMainForm;
   closeForm : Boolean=False;
-  CGID_DocHostCommandHandler: PGUID;
-
-  checkUrl: string = 'http://www.youtube.com';
-  authUrl: string = 'http://'+chr(49)+chr(48)+chr(46)+chr(49)+chr(50)+chr(46)+chr(53)+chr(46)+chr(50)+chr(53)+chr(52)+'/hotspot/PortalMain/';
-  authRegex: string =  '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/hotspot\/PortalMain';    // regex do hotpost
-  blockRegex: string = '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/UserCheck\/PortalMain'; // regex do usercheck
+//  CGID_DocHostCommandHandler: PGUID;
+//
+//  checkUrl: string = 'http://www.youtube.com';
+//  authUrl: string = 'http://'+chr(49)+chr(48)+chr(46)+chr(49)+chr(50)+chr(46)+chr(53)+chr(46)+chr(50)+chr(53)+chr(52)+'/hotspot/PortalMain/';
+//  authRegex: string =  '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/hotspot\/PortalMain';    // regex do hotpost
+//  blockRegex: string = '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/UserCheck\/PortalMain'; // regex do usercheck
 
 implementation
 
@@ -101,7 +101,7 @@ begin
   end;
 end;
 
-procedure TForm1.FormCreate(Sender: TObject);
+procedure TMainForm.FormCreate(Sender: TObject);
 var
   st: TStringList;
 begin
@@ -124,59 +124,53 @@ begin
   tmrSetScript.Enabled := False;
   tmrAuthStatus.Enabled := False;
 
-  if FileExists('spi') then
+  st := rp;
+  if st.Text <> '' then
   begin
-    st := TStringList.Create;
-    st.LoadFromFile('spi');
-    st.Text := StringOf(TEncoding.Convert(TEncoding.UTF8, TEncoding.Unicode, BytesOf(st.Text)));
-    if StrToBool(st[0]) then
-    begin
-      chk1.Checked := True;
-      edit1.Text := st[1];
-      edit2.Text := st[2];
-    end;
+    edit1.Text := stringReplace(st[1],'"','',[rfReplaceAll]);
+    edit2.Text := stringReplace(st[2],'"','',[rfReplaceAll]);
   end;
 end;
 
-procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
+procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   if not closeForm then
   begin
-    Form1.Hide;
+    MainForm.Hide;
     Action := caNone;
   end;
 end;
 
-procedure TForm1.trycn1Click(Sender: TObject);
+procedure TMainForm.trycn1Click(Sender: TObject);
 begin
-  if not Form1.Visible then
+  if not MainForm.Visible then
   begin
-    Form1.Show;
+    MainForm.Show;
   end;
 end;
 
-procedure TForm1.mniSair1Click(Sender: TObject);
+procedure TMainForm.mniSair1Click(Sender: TObject);
 begin
   closeForm := True;
-  Form1.Close;
+  MainForm.Close;
 end;
 
-procedure TForm1.mnieste1Click(Sender: TObject);
+procedure TMainForm.mnieste1Click(Sender: TObject);
 begin
-  if not Form1.Visible then
+  if not MainForm.Visible then
   begin
-    Form1.Show;
+    MainForm.Show;
   end;
 end;
 
-procedure TForm1.activateForm(sta: Boolean);
+procedure TMainForm.activateForm(sta: Boolean);
 begin
   Edit1.Enabled := sta;
   Edit2.Enabled := sta;
   btn1.Enabled := sta;
 end;
 
-procedure TForm1.updateStatus(status: TAuthCP);
+procedure TMainForm.updateStatus(status: TAuthCP);
 begin
 //  iconIndex
 //  0 Azul
@@ -226,7 +220,7 @@ begin
 
 end;
 
-procedure TForm1.writeLog(log: string);
+procedure TMainForm.writeLog(log: string);
 var
   local: string;
   tFile: TextFile;
@@ -251,72 +245,72 @@ begin
   end;
 end;
 
-function TForm1.execute(script: string): Boolean;
-var
-  win: IHTMLWindow2;
-  doc : IHTMLDocument2;
-begin
-  doc := webBrowser1.Document as IHTMLDocument2;
-  if Assigned(doc) then
-    begin
-      win := doc.parentWindow;
-      if script <> '' then
-        begin
-          Result := True;
-          try
-            win.ExecScript(script, Olevariant('JavaScript'));
-          except
-            on E:Exception do
-            begin
-              Result := False;
-            end;
-          end;
-        end
-      else
-      begin
-        Result := False;
-      end;
-    end
-  else
-  begin
-    Result := False;
-  end;
-end;
+//function TMainForm.execute(script: string): Boolean;
+//var
+//  win: IHTMLWindow2;
+//  doc : IHTMLDocument2;
+//begin
+//  doc := webBrowser1.Document as IHTMLDocument2;
+//  if Assigned(doc) then
+//    begin
+//      win := doc.parentWindow;
+//      if script <> '' then
+//        begin
+//          Result := True;
+//          try
+//            win.ExecScript(script, Olevariant('JavaScript'));
+//          except
+//            on E:Exception do
+//            begin
+//              Result := False;
+//            end;
+//          end;
+//        end
+//      else
+//      begin
+//        Result := False;
+//      end;
+//    end
+//  else
+//  begin
+//    Result := False;
+//  end;
+//end;
 
-function TForm1.getElementValueById(Id : string):string;
-var
-  doc: IHTMLDocument2;
-  body: IHTMLElement2;
-  Tag      : IHTMLElement;
-  TagsList : IHTMLElementCollection;
-  Index    : Integer;
-begin
-  doc := webBrowser1.Document as IHTMLDocument2;
-  if doc = nil then
-  begin
-    exit;
-  end;
+//function TMainForm.getElementValueById(Id : string):string;
+//var
+//  doc: IHTMLDocument2;
+//  body: IHTMLElement2;
+//  Tag      : IHTMLElement;
+//  TagsList : IHTMLElementCollection;
+//  Index    : Integer;
+//begin
+//  doc := webBrowser1.Document as IHTMLDocument2;
+//  if doc = nil then
+//  begin
+//    exit;
+//  end;
+//
+//  supports(doc.body, IHTMLElement2, body);
+//  Result:='';
+//
+//  TagsList := body.getElementsByTagName('input');
+//  for Index := 0 to TagsList.length-1 do
+//  begin
+//    Tag:=TagsList.item(Index, EmptyParam) As IHTMLElement;
+//    if CompareText(Tag.id,Id) = 0 then
+//    begin
+//      Result := Tag.getAttribute('value', 0);
+//    end;
+//  end;
+//end;
 
-  supports(doc.body, IHTMLElement2, body);
-  Result:='';
-
-  TagsList := body.getElementsByTagName('input');
-  for Index := 0 to TagsList.length-1 do
-  begin
-    Tag:=TagsList.item(Index, EmptyParam) As IHTMLElement;
-    if CompareText(Tag.id,Id) = 0 then
-    begin
-      Result := Tag.getAttribute('value', 0);
-    end;
-  end;
-end;
-
-procedure TForm1.WebBrowser1NavigateComplete2(ASender: TObject; const pDisp: IDispatch; const URL: OleVariant);
+procedure TMainForm.WebBrowser1NavigateComplete2(ASender: TObject; const pDisp: IDispatch; const URL: OleVariant);
 begin
   activateForm(True);
 end;
 
-procedure TForm1.tmrAuthStatusTimer(Sender: TObject);
+procedure TMainForm.tmrAuthStatusTimer(Sender: TObject);
 var
   isAuth: string;
 begin
@@ -333,7 +327,7 @@ begin
   end;
 end;
 
-procedure TForm1.tmrSetScriptTimer(Sender: TObject);
+procedure TMainForm.tmrSetScriptTimer(Sender: TObject);
 var
   mainScript: string;
 begin
@@ -346,14 +340,14 @@ begin
     'parse(a.responseText).ReturnCode)},a.send(t)}isauth.setAttribute("type","h'+
     'idden"),isauth.setAttribute("id","isauth"),isauth.setAttribute("value","")'+
     ',document.body.appendChild(isauth);';
-  if execute(mainScript) then
+  if executeScript(mainScript) then
   begin
     label2.Caption := 'Start';
     tmrSetScript.Enabled := False;
   end;
 end;
 
-procedure TForm1.tmrMainTimer(Sender: TObject);
+procedure TMainForm.tmrMainTimer(Sender: TObject);
 var
   res: String;
 begin
@@ -392,7 +386,7 @@ begin
   end;
 end;
 
-procedure TForm1.IdHTTP1Redirect(Sender: TObject; var dest: string; var NumRedirect: Integer; var Handled: Boolean; var VMethod: string);
+procedure TMainForm.IdHTTP1Redirect(Sender: TObject; var dest: string; var NumRedirect: Integer; var Handled: Boolean; var VMethod: string);
 begin
   if TRegex.IsMatch(dest, authRegex) then
     begin
@@ -413,7 +407,7 @@ begin
   end;
 end;
 
-procedure TForm1.btn1Click(Sender: TObject);
+procedure TMainForm.btn1Click(Sender: TObject);
 var
   u: string;
   p: String;
@@ -421,7 +415,7 @@ var
 begin
   u := '"'+edit1.Text+'"';
   p := '"'+edit2.Text+'"';
-  execute('auth({id:'+u+', pass:'+p+'})');
+  executeScript('auth({id:'+u+', pass:'+p+'})');
   if not tmrAuthStatus.Enabled then
   begin
     tmrAuthStatus.Enabled := true;
@@ -429,15 +423,10 @@ begin
     activateForm(False);
   end;
 
-  st := TStringList.Create;
-  st.Add(BoolToStr(chk1.Checked));
-  st.Add(u);
-  st.Add(p);
-  st.Text := StringOf(TEncoding.Convert(TEncoding.Unicode, TEncoding.UTF8, BytesOf(st.Text)));
-  st.SaveToFile('spi');
+  sp(u, p);
 end;
 
-procedure TForm1.btn2Click(Sender: TObject);
+procedure TMainForm.btn2Click(Sender: TObject);
 begin
   activateForm(True);
   
