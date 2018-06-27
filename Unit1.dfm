@@ -2,7 +2,7 @@ object MainForm: TMainForm
   Left = 0
   Top = 0
   BorderStyle = bsSizeToolWin
-  ClientHeight = 215
+  ClientHeight = 211
   ClientWidth = 622
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -2394,15 +2394,8 @@ object MainForm: TMainForm
     Enabled = False
     Interval = 30000
     OnTimer = tmrAuthStatusTimer
-    Left = 392
-    Top = 168
-  end
-  object tmrSetScript: TTimer
-    Enabled = False
-    Interval = 2000
-    OnTimer = tmrSetScriptTimer
-    Left = 280
-    Top = 168
+    Left = 408
+    Top = 160
   end
   object IdHTTP1: TIdHTTP
     IOHandler = IdSSLIOHandlerSocketOpenSSL1
@@ -2437,8 +2430,8 @@ object MainForm: TMainForm
   object tmrMain: TTimer
     Interval = 4000
     OnTimer = tmrMainTimer
-    Left = 336
-    Top = 168
+    Left = 344
+    Top = 160
   end
   object il1: TImageList
     Height = 64
@@ -2446,7 +2439,7 @@ object MainForm: TMainForm
     Left = 408
     Top = 72
     Bitmap = {
-      494C01010400F800200140004000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C01010400F800240140004000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000000100008000000001002000000000000000
       0200000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

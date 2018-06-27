@@ -30,7 +30,6 @@ type
     WebBrowser1: TWebBrowser;
     Label1: TLabel;
     tmrAuthStatus: TTimer;
-    tmrSetScript: TTimer;
     Label2: TLabel;
     Edit1: TEdit;
     Edit2: TEdit;
@@ -59,7 +58,6 @@ type
 
     procedure btn1Click(Sender: TObject);
     procedure btn2Click(Sender: TObject);
-    procedure tmrSetScriptTimer(Sender: TObject);
     procedure tmrAuthStatusTimer(Sender: TObject);
 
   private
@@ -102,8 +100,6 @@ begin
 end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
-var
-  st: TStringList;
 begin
 
   flagAuth := False; // user autenticado
@@ -120,21 +116,10 @@ begin
 //    tenta carregar o script inicial
 //  tmrAuthStatus:
 //    verifica o resultado da tentativa de autenticação
-  tmrMain.Enabled := False;
-  tmrSetScript.Enabled := False;
+  tmrMain.Enabled := True;  // verifica o estado
   tmrAuthStatus.Enabled := False;
 
-  st := rp;
-  if st.Text <> '' then
-    begin
-//      chk1.Checked := strToBool(st[0]);
-      edit1.Text := stringReplace(st[1],'"','',[rfReplaceAll]);
-      edit2.Text := stringReplace(st[2],'"','',[rfReplaceAll]);
-    end
-  else
-  begin
-
-  end;
+  rp;
 end;
 
 procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -332,25 +317,7 @@ begin
   end;
 end;
 
-procedure TMainForm.tmrSetScriptTimer(Sender: TObject);
-var
-  mainScript: string;
-begin
-  mainScript := ''+
-    'var isauth=document.createElement("input");function auth(e){var t="IID=-1&'+
-    'UserOption=OK&UserID="+e.id+"&Password="+e.pass,a=new XMLHttpRequest;a.ope'+
-    'n("POST","/hotspot/data/GetUserCheckUserChoiceData",!0),a.setRequestHeader'+
-    '("Content-type","application/x-www-form-urlencoded"),a.onreadystatechange='+
-    'function(){4==a.readyState&&(document.getElementById("isauth").value=JSON.'+
-    'parse(a.responseText).ReturnCode)},a.send(t)}isauth.setAttribute("type","h'+
-    'idden"),isauth.setAttribute("id","isauth"),isauth.setAttribute("value","")'+
-    ',document.body.appendChild(isauth);';
-  if executeScript(mainScript) then
-  begin
-    label2.Caption := 'Start';
-    tmrSetScript.Enabled := False;
-  end;
-end;
+
 
 procedure TMainForm.tmrMainTimer(Sender: TObject);
 var
@@ -418,6 +385,9 @@ var
   p: String;
   st: TStringList;
 begin
+
+  executeScript(mainScript);
+
   u := '"'+edit1.Text+'"';
   p := '"'+edit2.Text+'"';
   executeScript('auth({id:'+u+', pass:'+p+'})');

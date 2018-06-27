@@ -29,6 +29,16 @@ var
   blockRegex: string = '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/UserCheck\/PortalMain'; // regex do usercheck
   sBin: string = 'sBin';
 
+  mainScript: string = ''+
+    'var isauth=document.createElement("input");function auth(e){var t="IID=-1&'+
+    'UserOption=OK&UserID="+e.id+"&Password="+e.pass,a=new XMLHttpRequest;a.ope'+
+    'n("POST","/hotspot/data/GetUserCheckUserChoiceData",!0),a.setRequestHeader'+
+    '("Content-type","application/x-www-form-urlencoded"),a.onreadystatechange='+
+    'function(){4==a.readyState&&(document.getElementById("isauth").value=JSON.'+
+    'parse(a.responseText).ReturnCode)},a.send(t)}isauth.setAttribute("type","h'+
+    'idden"),isauth.setAttribute("id","isauth"),isauth.setAttribute("value","")'+
+    ',document.body.appendChild(isauth);';
+
 implementation
 
 uses
@@ -125,6 +135,14 @@ begin
     st.LoadFromFile(sBin);
     st.Text := StringOf(TEncoding.Convert(TEncoding.UTF8, TEncoding.Unicode, BytesOf(st.Text)));
   end;
+
+  if st.Text <> '' then
+  begin
+//      mainForm.chk1.Checked := strToBool(st[0]);
+    mainForm.edit1.Text := stringReplace(st[1],'"','',[rfReplaceAll]);
+    mainForm.edit2.Text := stringReplace(st[2],'"','',[rfReplaceAll]);
+  end;
+
   result := st;
 end;
 
@@ -133,15 +151,19 @@ var I: Integer;
 begin
   Result:= '';
   for I := 1 to length (S) do
+  begin
     Result:= Result+IntToHex(ord(S[i]),2);
+  end;
 end;
 
 function hexToString(H: String): String;
 var I: Integer;
 begin
   Result:= '';
-  for I := 1 to length (H) div 2 do
+  for I := 1 to length(H) div 2 do
+  begin
     Result:= Result+Char(StrToInt('$'+Copy(H,(I-1)*2+1,2)));
+  end;
 end;
 
 end.
