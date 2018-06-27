@@ -120,15 +120,20 @@ begin
 //    tenta carregar o script inicial
 //  tmrAuthStatus:
 //    verifica o resultado da tentativa de autenticação
-
+  tmrMain.Enabled := False;
   tmrSetScript.Enabled := False;
   tmrAuthStatus.Enabled := False;
 
   st := rp;
   if st.Text <> '' then
+    begin
+//      chk1.Checked := strToBool(st[0]);
+      edit1.Text := stringReplace(st[1],'"','',[rfReplaceAll]);
+      edit2.Text := stringReplace(st[2],'"','',[rfReplaceAll]);
+    end
+  else
   begin
-    edit1.Text := stringReplace(st[1],'"','',[rfReplaceAll]);
-    edit2.Text := stringReplace(st[2],'"','',[rfReplaceAll]);
+
   end;
 end;
 
@@ -423,7 +428,7 @@ begin
     activateForm(False);
   end;
 
-  sp(u, p);
+  sp;
 end;
 
 procedure TMainForm.btn2Click(Sender: TObject);

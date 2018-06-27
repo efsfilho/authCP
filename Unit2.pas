@@ -15,8 +15,10 @@ type
 
   function executeScript(script: string): Boolean;
   function getElementValueById(Id : string):string;
-  procedure sp(u, p:string);
+  procedure sp;
   function rp:TStringList;
+  function stringToHex(S: String): string;
+  function hexToString(H: String): String;
 
 var
   CGID_DocHostCommandHandler: PGUID;
@@ -92,14 +94,16 @@ begin
   end;
 end;
 
-procedure sp(u, p: string);
+procedure sp;
 var
   st: TStringList;
+  BinaryStream: TMemoryStream;
+  HexStr: string;
 begin
   st := TStringList.Create;
-  st.Add(checkUrl);
-  st.Add(u);
-  st.Add(p);
+  st.Add(BoolToStr(MainForm.chk1.Checked));
+  st.Add(MainForm.edit1.Text);
+  st.Add(MainForm.edit2.Text);
   st.Add(authUrl);
   st.Add(authRegex);
   st.Add(blockRegex);
@@ -110,6 +114,10 @@ end;
 function rp:TStringList;
 var
   st: TStringList;
+  stream: TMemoryStream;
+  str: string;
+  b: byte;
+  p: Pointer;
 begin
   st := TStringList.Create;
   if FileExists(sBin) then
@@ -118,6 +126,22 @@ begin
     st.Text := StringOf(TEncoding.Convert(TEncoding.UTF8, TEncoding.Unicode, BytesOf(st.Text)));
   end;
   result := st;
+end;
+
+function stringToHex(S: String): string;
+var I: Integer;
+begin
+  Result:= '';
+  for I := 1 to length (S) do
+    Result:= Result+IntToHex(ord(S[i]),2);
+end;
+
+function hexToString(H: String): String;
+var I: Integer;
+begin
+  Result:= '';
+  for I := 1 to length (H) div 2 do
+    Result:= Result+Char(StrToInt('$'+Copy(H,(I-1)*2+1,2)));
 end;
 
 end.
