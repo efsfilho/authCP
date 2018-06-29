@@ -2,8 +2,8 @@ object MainForm: TMainForm
   Left = 0
   Top = 0
   BorderStyle = bsDialog
-  ClientHeight = 152
-  ClientWidth = 267
+  ClientHeight = 166
+  ClientWidth = 282
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -18,21 +18,21 @@ object MainForm: TMainForm
   TextHeight = 13
   object lbl1: TLabel
     Left = 8
-    Top = 110
+    Top = 140
     Width = 9
     Height = 13
     Caption = '::'
   end
   object lbl2: TLabel
     Left = 26
-    Top = 110
+    Top = 140
     Width = 192
     Height = 13
     Caption = '                                                                '
   end
   object btn1: TButton
     Left = 143
-    Top = 65
+    Top = 95
     Width = 75
     Height = 25
     Caption = 'Login'
@@ -54,14 +54,14 @@ object MainForm: TMainForm
   end
   object Edit1: TEdit
     Left = 8
-    Top = 40
+    Top = 70
     Width = 121
     Height = 21
     TabOrder = 2
   end
   object Edit2: TEdit
     Left = 8
-    Top = 67
+    Top = 97
     Width = 121
     Height = 21
     PasswordChar = '*'
@@ -74,6 +74,15 @@ object MainForm: TMainForm
     Height = 17
     Caption = 'Mant'#233'm Logado'
     TabOrder = 4
+  end
+  object cbb1: TComboBox
+    Left = 8
+    Top = 40
+    Width = 145
+    Height = 21
+    Style = csDropDownList
+    TabOrder = 5
+    OnSelect = cbb1Select
   end
   object trycn1: TTrayIcon
     Icon.Data = {
@@ -2402,7 +2411,6 @@ object MainForm: TMainForm
     Top = 8
   end
   object tmrMain: TTimer
-    Interval = 4000
     OnTimer = tmrMainTimer
     Left = 344
     Top = 160

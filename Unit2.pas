@@ -115,6 +115,7 @@ begin
     begin
       st := TStringList.Create;
       st.Add(BoolToStr(MainForm.chk1.Checked));
+      st.Add(IntToStr(mainForm.cbb1.ItemIndex));
       st.Add(MainForm.edit1.Text);
       st.Add(MainForm.edit2.Text);
       st.Add(authUrl);
@@ -145,8 +146,9 @@ begin
     if (st.Count > 1) and (st[0]  <> '') then
     begin
       mainForm.chk1.Checked := strToBool(st[0]);
-      mainForm.edit1.Text := stringReplace(st[1],'"','',[rfReplaceAll]);
-      mainForm.edit2.Text := stringReplace(st[2],'"','',[rfReplaceAll]);
+      mainForm.cbb1.ItemIndex := StrToInt(st[1]);
+      mainForm.edit1.Text := stringReplace(st[2],'"','',[rfReplaceAll]);
+      mainForm.edit2.Text := stringReplace(st[3],'"','',[rfReplaceAll]);
     end;
   end;
 

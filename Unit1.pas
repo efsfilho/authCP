@@ -37,6 +37,7 @@ type
     chk1: TCheckBox;
     lbl1: TLabel;
     lbl2: TLabel;
+    cbb1: TComboBox;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure trycn1Click(Sender: TObject);
@@ -51,6 +52,7 @@ type
     procedure btn1Click(Sender: TObject);
     procedure tmrGetAuthTimer(Sender: TObject);
     procedure autentica;
+    procedure cbb1Select(Sender: TObject);
 
   private
     { Private declarations }
@@ -91,15 +93,23 @@ end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
+  cbb1.Items.Add('30 Minutos');
+  cbb1.Items.Add('1 Hora');
+  cbb1.Items.Add('2 Horas');
+  cbb1.Items.Add('6 Horas');
+
+//  checkUrl := 'http://www.sighra.com.br/maps/';
 
   webbrowser1.navigate(authUrl);
   flagAuth := False; // user autenticado
   flagMain := True;  // thread principal
   flagXhr  := False;
-  flagIHttp:= False;
+
   flagLog  := true; // flag grava log em disco
   contAuth := 0;     // tentativas de login
   rp;
+
+  tmrMain.Enabled := True;  // verifica o estado
 
 //  tmrMain:
 //    verifica se maquina não esta autenticada ou não
@@ -107,7 +117,6 @@ begin
 //  tmrGetAuth:
 //    verifica o resultado da tentativa de autenticação
 
-  tmrMain.Enabled := True;  // verifica o estado
 end;
 
 procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -266,6 +275,31 @@ begin
 //  tmrMain.Interval := 1800000; // meia hora
 //  tmrMain.Interval := 3600000;
 //  tmrMain.Interval := 10000;
+  if cbb1.ItemIndex >= 0 then
+    begin
+      case cbb1.ItemIndex of
+        0:
+        begin
+          tmrMain.Interval := 1800000;
+        end;
+        1:
+        begin
+          tmrMain.Interval := 3600000;
+        end;
+        2:
+        begin
+          tmrMain.Interval := 14400000;
+        end;
+        3:
+        begin
+          tmrMain.Interval := 43200000;
+        end;
+      end;
+    end
+  else
+  begin
+    tmrMain.Interval := 3600000;
+  end;
 
   if flagMain then
   begin
@@ -319,6 +353,32 @@ begin
   autentica;
   contAuth := 1; // primeira tentativa
   tmrGetAuth.Enabled := True; // tenta autenticar
+end;
+
+procedure TMainForm.cbb1Select(Sender: TObject);
+begin
+//  cbb1.Items.Add('30 Minutos');
+//  cbb1.Items.Add('1 Hora');
+//  cbb1.Items.Add('2 Horas');
+//  cbb1.Items.Add('6 Horas');
+  case cbb1.ItemIndex of
+    0:
+    begin
+      tmrMain.Interval := 1800000;
+    end;
+    1:
+    begin
+      tmrMain.Interval := 3600000;
+    end;
+    2:
+    begin
+      tmrMain.Interval := 14400000;
+    end;
+    3:
+    begin
+      tmrMain.Interval := 43200000;
+    end;
+  end;
 end;
 
 procedure TMainForm.autentica;
