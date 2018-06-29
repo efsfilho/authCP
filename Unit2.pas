@@ -11,7 +11,19 @@ uses
 
 type
 
-  TAuthCP = (AUTH_YES, AUTH_NO, AUTH_UNDEFINED, AUTH_DEFAULT);
+  TAuthCP = (AUTH_YES, AUTH_NO, AUTH_UNDEFINED);
+
+  TCheck = class(TThread)
+  protected
+    FProc: TProc;
+
+    procedure Execute; override;
+    procedure cEvent;
+  public
+    FEvent: Thandle;
+    constructor Create(tproc: TProc);
+    destructor Destroy; override;
+  end;
 
   function executeScript(script: string): Boolean;
   function getElementValueById(Id : string):string;
@@ -24,10 +36,10 @@ var
   CGID_DocHostCommandHandler: PGUID;
 
   checkUrl: string = 'http://www.youtube.com';
-  authUrl: string = 'http://'+chr(49)+chr(48)+chr(46)+chr(49)+chr(50)+chr(46)+chr(53)+chr(46)+chr(50)+chr(53)+chr(52)+'/hotspot/PortalMain/';
+  authUrl: string = 'http://'+chr(49)+chr(48)+chr(46)+chr(49)+chr(50)+chr(46)+chr(53)+chr(46)+chr(50)+chr(53)+chr(52)+'/hotspot/PortalMain';
   authRegex: string =  '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/hotspot\/PortalMain';    // regex do hotpost
   blockRegex: string = '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/UserCheck\/PortalMain'; // regex do usercheck
-  sBin: string = 'sBin';
+  sBin: string = 'sbin';
 
   mainScript: string = ''+
     'var isauth=document.createElement("input");function auth(e){var t="IID=-1&'+
@@ -43,6 +55,39 @@ implementation
 
 uses
   Unit1;
+
+constructor TCheck.create(tproc: TProc);
+begin
+  inherited
+  Create(True);
+  FProc := tproc;
+  FreeOnTerminate := True;
+  cEvent;
+end;
+
+procedure TCheck.cEvent;
+var
+  lpEventAttributes: PSecurityAttributes;
+begin
+//  inherited;
+  FillChar(lpEventAttributes,Sizeof(PSecurityAttributes),0);
+  FEvent := CreateEvent(lpEventAttributes,false,False,'EXIT_EVENT');
+  if FEvent = 0 then raise Exception.Create('Unable to create EXIT_EVENT');
+end;
+
+procedure TCheck.Execute;
+begin
+  inherited;
+  FProc;
+end;
+
+destructor TCheck.Destroy;
+begin
+  if not Terminated then Terminate;
+  SetEvent(FEvent);
+  CloseHandle(FEvent);
+  inherited;
+end;
 
 function executeScript(script: string): Boolean;
 var
@@ -110,15 +155,25 @@ var
   BinaryStream: TMemoryStream;
   HexStr: string;
 begin
-  st := TStringList.Create;
-  st.Add(BoolToStr(MainForm.chk1.Checked));
-  st.Add(MainForm.edit1.Text);
-  st.Add(MainForm.edit2.Text);
-  st.Add(authUrl);
-  st.Add(authRegex);
-  st.Add(blockRegex);
-  st.Text := StringOf(TEncoding.Convert(TEncoding.Unicode, TEncoding.UTF8, BytesOf(st.Text)));
-  st.SaveToFile(sBin);
+  if MainForm.chk1.Checked then
+    begin
+      st := TStringList.Create;
+      st.Add(BoolToStr(MainForm.chk1.Checked));
+      st.Add(MainForm.edit1.Text);
+      st.Add(MainForm.edit2.Text);
+      st.Add(authUrl);
+      st.Add(authRegex);
+      st.Add(blockRegex);
+      st.Text := StringOf(TEncoding.Convert(TEncoding.Unicode, TEncoding.UTF8, BytesOf(st.Text)));
+      st.SaveToFile(sBin);
+    end
+  else
+  begin
+    if FileExists(sBin) then
+    begin
+      DeleteFile(sBin);
+    end;
+  end;
 end;
 
 function rp:TStringList;
@@ -134,13 +189,13 @@ begin
   begin
     st.LoadFromFile(sBin);
     st.Text := StringOf(TEncoding.Convert(TEncoding.UTF8, TEncoding.Unicode, BytesOf(st.Text)));
-  end;
 
-  if st.Text <> '' then
-  begin
-//      mainForm.chk1.Checked := strToBool(st[0]);
-    mainForm.edit1.Text := stringReplace(st[1],'"','',[rfReplaceAll]);
-    mainForm.edit2.Text := stringReplace(st[2],'"','',[rfReplaceAll]);
+    if (st.Count > 1) and (st[0]  <> '') then
+    begin
+      mainForm.chk1.Checked := strToBool(st[0]);
+      mainForm.edit1.Text := stringReplace(st[1],'"','',[rfReplaceAll]);
+      mainForm.edit2.Text := stringReplace(st[2],'"','',[rfReplaceAll]);
+    end;
   end;
 
   result := st;

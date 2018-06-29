@@ -2,7 +2,7 @@ object MainForm: TMainForm
   Left = 0
   Top = 0
   BorderStyle = bsSizeToolWin
-  ClientHeight = 211
+  ClientHeight = 264
   ClientWidth = 622
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -15,41 +15,26 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   PixelsPerInch = 96
   TextHeight = 13
-  object Label1: TLabel
-    Left = 24
-    Top = 24
-    Width = 31
+  object lbl1: TLabel
+    Left = 8
+    Top = 110
+    Width = 9
     Height = 13
-    Caption = 'Status'
+    Caption = '::'
   end
-  object Label2: TLabel
-    Left = 33
-    Top = 43
-    Width = 22
+  object lbl2: TLabel
+    Left = 26
+    Top = 110
+    Width = 192
     Height = 13
-    Caption = 'Wait'
-  end
-  object Label3: TLabel
-    Left = 28
-    Top = 62
-    Width = 27
-    Height = 13
-    Caption = 'Auth:'
-  end
-  object Label4: TLabel
-    Left = 61
-    Top = 62
-    Width = 5
-    Height = 13
-    Caption = '?'
+    Caption = '                                                                '
   end
   object btn1: TButton
-    Left = 144
-    Top = 145
+    Left = 143
+    Top = 65
     Width = 75
     Height = 25
     Caption = 'Login'
-    Enabled = False
     TabOrder = 0
     OnClick = btn1Click
   end
@@ -59,7 +44,6 @@ object MainForm: TMainForm
     Width = 300
     Height = 150
     TabOrder = 1
-    OnNavigateComplete2 = WebBrowser1NavigateComplete2
     ControlData = {
       4C000000021F0000810F00000000000000000000000000000000000000000000
       000000004C000000000000000000000001000000E0D057007335CF11AE690800
@@ -69,37 +53,26 @@ object MainForm: TMainForm
   end
   object Edit1: TEdit
     Left = 8
-    Top = 120
+    Top = 40
     Width = 121
     Height = 21
-    Enabled = False
     TabOrder = 2
   end
   object Edit2: TEdit
     Left = 8
-    Top = 147
+    Top = 67
     Width = 121
     Height = 21
-    Enabled = False
     PasswordChar = '*'
     TabOrder = 3
   end
-  object btn2: TButton
-    Left = 160
-    Top = 31
-    Width = 75
-    Height = 25
-    Caption = 'ativa'
-    TabOrder = 4
-    OnClick = btn2Click
-  end
   object chk1: TCheckBox
     Left = 8
-    Top = 97
+    Top = 17
     Width = 97
     Height = 17
     Caption = 'Mant'#233'm Logado'
-    TabOrder = 5
+    TabOrder = 4
   end
   object trycn1: TTrayIcon
     Icon.Data = {
@@ -2390,15 +2363,16 @@ object MainForm: TMainForm
       OnClick = mniSair1Click
     end
   end
-  object tmrAuthStatus: TTimer
+  object tmrGetAuth: TTimer
     Enabled = False
-    Interval = 30000
-    OnTimer = tmrAuthStatusTimer
-    Left = 408
+    Interval = 3000
+    OnTimer = tmrGetAuthTimer
+    Left = 288
     Top = 160
   end
   object IdHTTP1: TIdHTTP
     IOHandler = IdSSLIOHandlerSocketOpenSSL1
+    OnWork = IdHTTP1Work
     AllowCookies = True
     HandleRedirects = True
     ProxyParams.BasicAuthentication = False
@@ -2439,7 +2413,7 @@ object MainForm: TMainForm
     Left = 408
     Top = 72
     Bitmap = {
-      494C01010400F800240140004000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C01010400F800280140004000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000000100008000000001002000000000000000
       0200000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

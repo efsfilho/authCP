@@ -19,7 +19,6 @@ type
     function QueryStatus(CmdGroup: PGUID; cCmds: Cardinal; prgCmds: POleCmd; CmdText: POleCmdText): HResult; stdcall;
     function Exec(CmdGroup: PGUID; nCmdID, nCmdexecopt: DWORD; const vaIn: OleVariant; var vaOut: OleVariant): HResult; stdcall;
   end;
-//  TAuthCP = (AUTH_YES, AUTH_NO, AUTH_UNDEFINED, AUTH_DEFAULT);
 
   TMainForm = class(TForm)
     trycn1: TTrayIcon;
@@ -28,59 +27,50 @@ type
     mniSair1: TMenuItem;
     mnieste1: TMenuItem;
     WebBrowser1: TWebBrowser;
-    Label1: TLabel;
-    tmrAuthStatus: TTimer;
-    Label2: TLabel;
+    tmrGetAuth: TTimer;
     Edit1: TEdit;
     Edit2: TEdit;
     IdHTTP1: TIdHTTP;
     IdSSLIOHandlerSocketOpenSSL1: TIdSSLIOHandlerSocketOpenSSL;
-    Label3: TLabel;
-    Label4: TLabel;
     tmrMain: TTimer;
-    btn2: TButton;
     il1: TImageList;
     chk1: TCheckBox;
+    lbl1: TLabel;
+    lbl2: TLabel;
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure trycn1Click(Sender: TObject);
     procedure mniSair1Click(Sender: TObject);
     procedure mnieste1Click(Sender: TObject);
-    procedure activateForm(sta: Boolean);
+
     procedure updateStatus(status: TauthCP);
     procedure writeLog(log: string);
-
-//    function execute(script: string): Boolean;
-//    function getElementValueById(Id : string):string;
-    procedure WebBrowser1NavigateComplete2(ASender: TObject; const pDisp: IDispatch; const URL: OleVariant);
     procedure tmrMainTimer(Sender: TObject);
     procedure IdHTTP1Redirect(Sender: TObject; var dest: string; var NumRedirect: Integer; var Handled: Boolean; var VMethod: string);
 
     procedure btn1Click(Sender: TObject);
-    procedure btn2Click(Sender: TObject);
-    procedure tmrAuthStatusTimer(Sender: TObject);
+    procedure tmrGetAuthTimer(Sender: TObject);
+    procedure autentica;
+    procedure IdHTTP1Work(ASender: TObject; AWorkMode: TWorkMode;
+      AWorkCount: Int64);
 
   private
     { Private declarations }
   public
-    flagAuth: Boolean;  // setados no create
+    flagAuth: Boolean;  // estado de autenticação
     flagMain: Boolean;
     flagLog:  Boolean;
     contAuth: Integer;
     contMain: Integer;
     log: TStringList;
+    tt: TCheck;
+    xhr: TIdhttp;
   end;
 
 var
   MainForm: TMainForm;
-  closeForm : Boolean=False;
-//  CGID_DocHostCommandHandler: PGUID;
-//
-//  checkUrl: string = 'http://www.youtube.com';
-//  authUrl: string = 'http://'+chr(49)+chr(48)+chr(46)+chr(49)+chr(50)+chr(46)+chr(53)+chr(46)+chr(50)+chr(53)+chr(52)+'/hotspot/PortalMain/';
-//  authRegex: string =  '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/hotspot\/PortalMain';    // regex do hotpost
-//  blockRegex: string = '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/UserCheck\/PortalMain'; // regex do usercheck
-
+  closeForm : Boolean=false;
+  stopThread: boolean=false;
 implementation
 
 {$R *.dfm}
@@ -102,33 +92,79 @@ end;
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
 
+  webbrowser1.navigate(authUrl);
   flagAuth := False; // user autenticado
   flagMain := True;  // flag do timer principal
   flagLog  := true; // flag grava log em disco
   contAuth := 0;     // tentativas de login
-  contMain := 0;     //
-  log := TStringlist.Create;
+  rp;
 
 //  tmrMain:
 //    verifica se maquina não esta autenticada ou não
 //    identifica redirect de authenticação ou bloqueio de url testada
-//  tmrSetScript:
-//    tenta carregar o script inicial
-//  tmrAuthStatus:
+//  tmrGetAuth:
 //    verifica o resultado da tentativa de autenticação
-  tmrMain.Enabled := True;  // verifica o estado
-  tmrAuthStatus.Enabled := False;
 
-  rp;
+  tmrMain.Enabled := true;  // verifica o estado
+//  tmrGetAuth.Enabled := False;
+
+//  tt := TCheck.Create(
+//    procedure
+//    begin
+//      while not stopThread do
+//      begin
+//        try
+//          flagMain := False;
+//          try
+//            idhttp1.Get(checkUrl);
+//          except
+//            on e:Exception do
+//            begin
+//              writeLog('exception: '+e.Message);
+//            end
+//          end;
+//          // verificação no redirect
+//        finally
+//          idhttp1.Disconnect;
+//          idhttp1.Free;
+//          flagMain := True;
+//        end;
+//
+////        sleep(1800000);
+//        sleep(2000);
+//
+//        if stopThread then
+//        begin
+//          tt.Terminate;
+//          closeform := true;
+//          close;
+//        end;
+//      end
+//    end
+//  );
+//
+//  tt.Start;
 end;
 
 procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
+var
+  s :string;
+  c: Cardinal;
 begin
+  sp;
+  xhr.Disconnect;
+  xhr.Free;
+//  if not stopThread then
+//  begin
+//    stopThread := true;
+//    closeForm := True;
+//  end;
+
   if not closeForm then
   begin
     MainForm.Hide;
     Action := caNone;
-  end;
+  end
 end;
 
 procedure TMainForm.trycn1Click(Sender: TObject);
@@ -153,13 +189,6 @@ begin
   end;
 end;
 
-procedure TMainForm.activateForm(sta: Boolean);
-begin
-  Edit1.Enabled := sta;
-  Edit2.Enabled := sta;
-  btn1.Enabled := sta;
-end;
-
 procedure TMainForm.updateStatus(status: TAuthCP);
 begin
 //  iconIndex
@@ -170,44 +199,40 @@ begin
   case status of
     AUTH_YES:
     begin
-      label4.Caption := 'On';
+      lbl2.Caption := 'Autenticado';
+      writeLog('redirect: autenticado');
       trycn1.IconIndex := 1;
-      flagAuth := True;
+      flagAuth := True;      ;
     end;
+
     AUTH_NO:
     begin
-      label4.Caption := 'Off';
+      lbl2.Caption := 'Desautenticado';
+      writeLog('redirect: desautenticado');
       trycn1.IconIndex := 2;
       flagAuth := False;
-      if chk1.Checked then
+      if chk1.Checked then // mantém logado
       begin
-        writelog('off');
-        if not flagAuth then
-        begin
-          btn1.Click;
-        end;
+        webbrowser1.Refresh;
+        autentica;
+        contAuth := 1; // primeira tentativa
+        tmrGetAuth.Enabled := True; // tenta autenticar
       end;
     end;
+
     AUTH_UNDEFINED:
     begin
-      label4.Caption := '-';
+      writeLog('redirect: ??');
+      lbl2.Caption := '--';
       trycn1.IconIndex := 3;
-      flagAuth := False;
-    end;
-    AUTH_DEFAULT:
-    begin
-      label4.Caption := '';
-      trycn1.IconIndex := 0;
       flagAuth := False;
     end;
   else
     begin
-      label4.Caption := '';
+//      label4.Caption := '';
       trycn1.IconIndex := 0;
     end;
   end;
-
-
 end;
 
 procedure TMainForm.writeLog(log: string);
@@ -217,10 +242,8 @@ var
 begin
   if flagLog then
   begin
-//    local := 'log'+DateTimeToStr(Now, 'DDMMAAHHMMSS');
-    local := 'log_'+FormatDateTime('YYYYMMDD_HHMMSS', Now)+'.txt';
-
-
+//    local := 'log_'+FormatDateTime('YYYYMMDD_HHMMSS', Now)+'.txt';
+    local := 'log.txt';
     Assignfile(tFile, local);
     if not FileExists(local) Then
       begin
@@ -230,136 +253,124 @@ begin
     begin
       Append(tFile);
     end;
-    Writeln(tFile, log);
+    Writeln(tFile, FormatDateTime('DD/MM/YYYY-HH:MM:SS', Now)+' - '+log);
     Closefile(tFile);
   end;
 end;
 
-//function TMainForm.execute(script: string): Boolean;
-//var
-//  win: IHTMLWindow2;
-//  doc : IHTMLDocument2;
-//begin
-//  doc := webBrowser1.Document as IHTMLDocument2;
-//  if Assigned(doc) then
-//    begin
-//      win := doc.parentWindow;
-//      if script <> '' then
-//        begin
-//          Result := True;
-//          try
-//            win.ExecScript(script, Olevariant('JavaScript'));
-//          except
-//            on E:Exception do
-//            begin
-//              Result := False;
-//            end;
-//          end;
-//        end
-//      else
-//      begin
-//        Result := False;
-//      end;
-//    end
-//  else
-//  begin
-//    Result := False;
-//  end;
-//end;
-
-//function TMainForm.getElementValueById(Id : string):string;
-//var
-//  doc: IHTMLDocument2;
-//  body: IHTMLElement2;
-//  Tag      : IHTMLElement;
-//  TagsList : IHTMLElementCollection;
-//  Index    : Integer;
-//begin
-//  doc := webBrowser1.Document as IHTMLDocument2;
-//  if doc = nil then
-//  begin
-//    exit;
-//  end;
-//
-//  supports(doc.body, IHTMLElement2, body);
-//  Result:='';
-//
-//  TagsList := body.getElementsByTagName('input');
-//  for Index := 0 to TagsList.length-1 do
-//  begin
-//    Tag:=TagsList.item(Index, EmptyParam) As IHTMLElement;
-//    if CompareText(Tag.id,Id) = 0 then
-//    begin
-//      Result := Tag.getAttribute('value', 0);
-//    end;
-//  end;
-//end;
-
-procedure TMainForm.WebBrowser1NavigateComplete2(ASender: TObject; const pDisp: IDispatch; const URL: OleVariant);
-begin
-  activateForm(True);
-end;
-
-procedure TMainForm.tmrAuthStatusTimer(Sender: TObject);
+procedure TMainForm.tmrGetAuthTimer(Sender: TObject);
 var
   isAuth: string;
 begin
-  isAuth := getElementValueById('isauth');
-  if isAuth <> '' then
-  begin
-    label1.Caption := isAuth;
-
-    tmrAuthStatus.Enabled := False;
-    if isAuth = 'FAILURE' then
+  if flagAuth then  // autenticado ?
     begin
-      activateForm(True);
+      writeLog('autenticado');
+      tmrGetAuth.Enabled := False;
+    end
+  else
+  begin
+    inc(contAuth);
+    if contAuth > 3 then  // 10 tentativas
+    begin
+      writeLog('3 Tentativas');
+      tmrGetAuth.Enabled := False;
+    end;
+
+    isAuth := getElementValueById('isauth');
+
+    if isAuth <> '' then
+    begin
+      lbl2.Caption := isAuth;
+      writeLog('getAuth: '+isAuth);
+      tmrGetAuth.Enabled := False;
+      if isAuth = 'SUCCESS' then
+        begin
+          updateStatus(AUTH_YES);
+        end
+      else
+      begin
+        if isAuth = 'FAILURE' then //
+        begin
+          updateStatus(AUTH_NO);
+        end;
+      end
     end;
   end;
 end;
 
-
-
 procedure TMainForm.tmrMainTimer(Sender: TObject);
 var
   res: String;
+
 begin
-//  tmrMain.Interval := 1800000; // meia hora
+//  xhr := Tidhttp.Create(nil);
+//  xhr.OnRedirect := IdHTTP1Redirect;
+  tmrMain.Interval := 1800000; // meia hora
 //  tmrMain.Interval := 3600000;
-  tmrMain.Interval := 10000;
+//  tmrMain.Interval := 10000;
+
+//  if flagMain then
+//  begin
+//    TThread.CreateAnonymousThread(
+//      procedure
+//      begin
+//        try
+//          flagMain := False;
+//          try
+//            res := idhttp1.Get(checkUrl);
+//          except
+//            on e:Exception do
+//            begin
+//              writeLog('exception: '+e.Message);
+//            end
+//          end;
+//          // verificação no redirect
+//        finally
+//          idhttp1.Disconnect;
+////          idhttp1.Free;
+//          flagMain := True;
+//        end;
+//      end
+//    ).Start;
+//  end;
+
+
   if flagMain then
   begin
     TThread.CreateAnonymousThread(
       procedure
+//      var
+//        xhr: TIdhttp;
       begin
+        xhr := Tidhttp.Create(nil);
         try
+          flagMain := False;
           try
-            flagMain := False;
-            res := idhttp1.Get(checkUrl);
-//            if idhttp1.ResponseCode = 200 then
-//            begin
-//              TThread.Synchronize(
-//                nil,
-//                procedure
-//                begin
-//                  updateStatus(AUTH_YES);
-//                end
-//              );
-//              flagAuth := True;
-//            end;
-          finally
-            idhttp1.Disconnect;
-            flagMain := True;
+            xhr.IOHandler := IdSSLIOHandlerSocketOpenSSL1;
+            xhr.OnWork := IdHTTP1Work;
+            xhr.OnRedirect := IdHTTP1Redirect;
+            xhr.Get(checkUrl);
+          except
+            on e:Exception do
+            begin
+              writeLog('exception: '+e.Message);
+            end
           end;
-        except
-          on e:Exception do log.Add('except: '+e.Message);
+          // verificação no redirect
+        finally
+          xhr.Disconnect;
+          xhr.Free;
+          flagMain := True;
         end;
       end
     ).Start;
   end;
+
 end;
 
 procedure TMainForm.IdHTTP1Redirect(Sender: TObject; var dest: string; var NumRedirect: Integer; var Handled: Boolean; var VMethod: string);
 begin
+
   if TRegex.IsMatch(dest, authRegex) then
     begin
       // redirect da tela de autenticação
@@ -379,32 +390,52 @@ begin
   end;
 end;
 
+procedure TMainForm.IdHTTP1Work(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: Int64);
+var
+  i: Int64;
+begin
+  i := AWorkCount;
+
+end;
+
 procedure TMainForm.btn1Click(Sender: TObject);
+begin
+  autentica;
+  contAuth := 1; // primeira tentativa
+  tmrGetAuth.Enabled := True; // tenta autenticar
+end;
+
+procedure TMainForm.autentica;
 var
   u: string;
   p: String;
   st: TStringList;
 begin
-
   executeScript(mainScript);
 
-  u := '"'+edit1.Text+'"';
-  p := '"'+edit2.Text+'"';
-  executeScript('auth({id:'+u+', pass:'+p+'})');
-  if not tmrAuthStatus.Enabled then
+  if edit1.Text <> '' then
+    begin
+      u := '"'+edit1.Text+'"';
+    end
+  else
   begin
-    tmrAuthStatus.Enabled := true;
-    label1.Caption := '...';
-    activateForm(False);
+    writeLog('usuario errado');
+    edit1.SetFocus;
+    exit;
   end;
 
-  sp;
-end;
-
-procedure TMainForm.btn2Click(Sender: TObject);
-begin
-  activateForm(True);
-  
+  if edit2.Text <> '' then
+    begin
+      p := '"'+edit2.Text+'"';
+    end
+  else
+  begin
+    writeLog('usuario errado');
+    edit2.SetFocus;
+    exit;
+  end;
+  executeScript('auth({id:'+u+', pass:'+p+'})');
+  writeLog('auth()');
 end;
 
 end.
