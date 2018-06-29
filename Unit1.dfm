@@ -1,9 +1,9 @@
 object MainForm: TMainForm
   Left = 0
   Top = 0
-  BorderStyle = bsSizeToolWin
-  ClientHeight = 264
-  ClientWidth = 622
+  BorderStyle = bsDialog
+  ClientHeight = 152
+  ClientWidth = 267
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -11,6 +11,7 @@ object MainForm: TMainForm
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  Position = poDesktopCenter
   OnClose = FormClose
   OnCreate = FormCreate
   PixelsPerInch = 96
@@ -2372,7 +2373,6 @@ object MainForm: TMainForm
   end
   object IdHTTP1: TIdHTTP
     IOHandler = IdSSLIOHandlerSocketOpenSSL1
-    OnWork = IdHTTP1Work
     AllowCookies = True
     HandleRedirects = True
     ProxyParams.BasicAuthentication = False

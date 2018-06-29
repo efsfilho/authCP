@@ -13,18 +13,6 @@ type
 
   TAuthCP = (AUTH_YES, AUTH_NO, AUTH_UNDEFINED);
 
-  TCheck = class(TThread)
-  protected
-    FProc: TProc;
-
-    procedure Execute; override;
-    procedure cEvent;
-  public
-    FEvent: Thandle;
-    constructor Create(tproc: TProc);
-    destructor Destroy; override;
-  end;
-
   function executeScript(script: string): Boolean;
   function getElementValueById(Id : string):string;
   procedure sp;
@@ -36,6 +24,7 @@ var
   CGID_DocHostCommandHandler: PGUID;
 
   checkUrl: string = 'http://www.youtube.com';
+
   authUrl: string = 'http://'+chr(49)+chr(48)+chr(46)+chr(49)+chr(50)+chr(46)+chr(53)+chr(46)+chr(50)+chr(53)+chr(52)+'/hotspot/PortalMain';
   authRegex: string =  '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/hotspot\/PortalMain';    // regex do hotpost
   blockRegex: string = '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/UserCheck\/PortalMain'; // regex do usercheck
@@ -56,38 +45,7 @@ implementation
 uses
   Unit1;
 
-constructor TCheck.create(tproc: TProc);
-begin
-  inherited
-  Create(True);
-  FProc := tproc;
-  FreeOnTerminate := True;
-  cEvent;
-end;
 
-procedure TCheck.cEvent;
-var
-  lpEventAttributes: PSecurityAttributes;
-begin
-//  inherited;
-  FillChar(lpEventAttributes,Sizeof(PSecurityAttributes),0);
-  FEvent := CreateEvent(lpEventAttributes,false,False,'EXIT_EVENT');
-  if FEvent = 0 then raise Exception.Create('Unable to create EXIT_EVENT');
-end;
-
-procedure TCheck.Execute;
-begin
-  inherited;
-  FProc;
-end;
-
-destructor TCheck.Destroy;
-begin
-  if not Terminated then Terminate;
-  SetEvent(FEvent);
-  CloseHandle(FEvent);
-  inherited;
-end;
 
 function executeScript(script: string): Boolean;
 var
@@ -152,8 +110,6 @@ end;
 procedure sp;
 var
   st: TStringList;
-  BinaryStream: TMemoryStream;
-  HexStr: string;
 begin
   if MainForm.chk1.Checked then
     begin
@@ -179,10 +135,6 @@ end;
 function rp:TStringList;
 var
   st: TStringList;
-  stream: TMemoryStream;
-  str: string;
-  b: byte;
-  p: Pointer;
 begin
   st := TStringList.Create;
   if FileExists(sBin) then

@@ -25,6 +25,7 @@ begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TMainForm, MainForm);
-  Application.ShowMainForm := False;
+//  Application.ShowMainForm := False;
+//  MainForm.ShowModal;
   Application.Run;
 end.

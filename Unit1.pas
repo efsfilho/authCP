@@ -51,19 +51,19 @@ type
     procedure btn1Click(Sender: TObject);
     procedure tmrGetAuthTimer(Sender: TObject);
     procedure autentica;
-    procedure IdHTTP1Work(ASender: TObject; AWorkMode: TWorkMode;
-      AWorkCount: Int64);
 
   private
     { Private declarations }
   public
     flagAuth: Boolean;  // estado de autenticação
     flagMain: Boolean;
+    flagXhr : Boolean;
+    flagIHttp:Boolean;
     flagLog:  Boolean;
     contAuth: Integer;
     contMain: Integer;
     log: TStringList;
-    tt: TCheck;
+//    tt: TCheck;
     xhr: TIdhttp;
   end;
 
@@ -94,7 +94,9 @@ begin
 
   webbrowser1.navigate(authUrl);
   flagAuth := False; // user autenticado
-  flagMain := True;  // flag do timer principal
+  flagMain := True;  // thread principal
+  flagXhr  := False;
+  flagIHttp:= False;
   flagLog  := true; // flag grava log em disco
   contAuth := 0;     // tentativas de login
   rp;
@@ -105,66 +107,24 @@ begin
 //  tmrGetAuth:
 //    verifica o resultado da tentativa de autenticação
 
-  tmrMain.Enabled := true;  // verifica o estado
-//  tmrGetAuth.Enabled := False;
-
-//  tt := TCheck.Create(
-//    procedure
-//    begin
-//      while not stopThread do
-//      begin
-//        try
-//          flagMain := False;
-//          try
-//            idhttp1.Get(checkUrl);
-//          except
-//            on e:Exception do
-//            begin
-//              writeLog('exception: '+e.Message);
-//            end
-//          end;
-//          // verificação no redirect
-//        finally
-//          idhttp1.Disconnect;
-//          idhttp1.Free;
-//          flagMain := True;
-//        end;
-//
-////        sleep(1800000);
-//        sleep(2000);
-//
-//        if stopThread then
-//        begin
-//          tt.Terminate;
-//          closeform := true;
-//          close;
-//        end;
-//      end
-//    end
-//  );
-//
-//  tt.Start;
+  tmrMain.Enabled := True;  // verifica o estado
 end;
 
 procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
-var
-  s :string;
-  c: Cardinal;
 begin
   sp;
-  xhr.Disconnect;
-  xhr.Free;
-//  if not stopThread then
-//  begin
-//    stopThread := true;
-//    closeForm := True;
-//  end;
-
   if not closeForm then
+    begin
+      MainForm.Hide;
+      Action := caNone;
+    end
+  else
   begin
-    MainForm.Hide;
-    Action := caNone;
-  end
+    if not MainForm.Visible then
+    begin
+      MainForm.Show;
+    end
+  end;
 end;
 
 procedure TMainForm.trycn1Click(Sender: TObject);
@@ -177,8 +137,10 @@ end;
 
 procedure TMainForm.mniSair1Click(Sender: TObject);
 begin
+  tmrMain.Enabled := False;
+  flagMain := False;
   closeForm := True;
-  MainForm.Close;
+  Close;
 end;
 
 procedure TMainForm.mnieste1Click(Sender: TObject);
@@ -299,73 +261,35 @@ begin
 end;
 
 procedure TMainForm.tmrMainTimer(Sender: TObject);
-var
-  res: String;
-
 begin
-//  xhr := Tidhttp.Create(nil);
-//  xhr.OnRedirect := IdHTTP1Redirect;
-  tmrMain.Interval := 1800000; // meia hora
+
+//  tmrMain.Interval := 1800000; // meia hora
 //  tmrMain.Interval := 3600000;
 //  tmrMain.Interval := 10000;
-
-//  if flagMain then
-//  begin
-//    TThread.CreateAnonymousThread(
-//      procedure
-//      begin
-//        try
-//          flagMain := False;
-//          try
-//            res := idhttp1.Get(checkUrl);
-//          except
-//            on e:Exception do
-//            begin
-//              writeLog('exception: '+e.Message);
-//            end
-//          end;
-//          // verificação no redirect
-//        finally
-//          idhttp1.Disconnect;
-////          idhttp1.Free;
-//          flagMain := True;
-//        end;
-//      end
-//    ).Start;
-//  end;
-
 
   if flagMain then
   begin
     TThread.CreateAnonymousThread(
       procedure
-//      var
-//        xhr: TIdhttp;
       begin
-        xhr := Tidhttp.Create(nil);
         try
           flagMain := False;
           try
-            xhr.IOHandler := IdSSLIOHandlerSocketOpenSSL1;
-            xhr.OnWork := IdHTTP1Work;
-            xhr.OnRedirect := IdHTTP1Redirect;
-            xhr.Get(checkUrl);
+            idhttp1.Get(checkUrl);
           except
             on e:Exception do
             begin
               writeLog('exception: '+e.Message);
             end
           end;
-          // verificação no redirect
         finally
-          xhr.Disconnect;
-          xhr.Free;
+//          idhttp1.Disconnect;
+//          idhttp1.Free;
           flagMain := True;
         end;
       end
     ).Start;
   end;
-
 end;
 
 procedure TMainForm.IdHTTP1Redirect(Sender: TObject; var dest: string; var NumRedirect: Integer; var Handled: Boolean; var VMethod: string);
@@ -390,14 +314,6 @@ begin
   end;
 end;
 
-procedure TMainForm.IdHTTP1Work(ASender: TObject; AWorkMode: TWorkMode; AWorkCount: Int64);
-var
-  i: Int64;
-begin
-  i := AWorkCount;
-
-end;
-
 procedure TMainForm.btn1Click(Sender: TObject);
 begin
   autentica;
@@ -409,7 +325,6 @@ procedure TMainForm.autentica;
 var
   u: string;
   p: String;
-  st: TStringList;
 begin
   executeScript(mainScript);
 
