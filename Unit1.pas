@@ -98,8 +98,6 @@ begin
   cbb1.Items.Add('2 Horas');
   cbb1.Items.Add('6 Horas');
 
-//  checkUrl := 'http://www.sighra.com.br/maps/';
-
   webbrowser1.navigate(authUrl);
   flagAuth := False; // user autenticado
   flagMain := True;  // thread principal
