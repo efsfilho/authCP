@@ -23,7 +23,7 @@ type
 var
   CGID_DocHostCommandHandler: PGUID;
 
-  checkUrl: string = 'http://www.youtube.com';
+  checkUrl: string = '';
 
   authUrl: string = 'http://'+chr(49)+chr(48)+chr(46)+chr(49)+chr(50)+chr(46)+chr(53)+chr(46)+chr(50)+chr(53)+chr(52)+'/hotspot/PortalMain';
   authRegex: string =  '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/hotspot\/PortalMain';    // regex do hotpost
