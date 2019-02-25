@@ -27,7 +27,6 @@ type
     mniSair1: TMenuItem;
     mnieste1: TMenuItem;
     WebBrowser1: TWebBrowser;
-    tmrGetAuth: TTimer;
     Edit1: TEdit;
     Edit2: TEdit;
     IdHTTP1: TIdHTTP;
@@ -38,6 +37,11 @@ type
     lbl1: TLabel;
     lbl2: TLabel;
     cbb1: TComboBox;
+    edtAuthUrl: TEdit;
+    edtCheckUrl: TEdit;
+    edtAuthRgx: TEdit;
+    edtBlockRgx: TEdit;
+    procedure exec(src: string);
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure trycn1Click(Sender: TObject);
@@ -50,29 +54,36 @@ type
     procedure IdHTTP1Redirect(Sender: TObject; var dest: string; var NumRedirect: Integer; var Handled: Boolean; var VMethod: string);
 
     procedure btn1Click(Sender: TObject);
-    procedure tmrGetAuthTimer(Sender: TObject);
+//    procedure tmrAuthenticatorTimer(Sender: TObject);
     procedure autentica;
+    procedure verifica;
     procedure cbb1Select(Sender: TObject);
 
+    procedure saveConfig;
+    procedure loadConfig;
+    procedure edtAuthUrlChange(Sender: TObject);
+    procedure edtCheckUrlChange(Sender: TObject);
+    procedure edtAuthRgxChange(Sender: TObject);
+    procedure edtBlockRgxChange(Sender: TObject);
+
   private
-    { Private declarations }
+
   public
-    flagAuth: Boolean;  // estado de autenticação
-    flagMain: Boolean;
-    flagXhr : Boolean;
-    flagIHttp:Boolean;
+//    flagAuth: Boolean;  // estado de autenticação
+//    flagMain: Boolean;
+//    flagXhr : Boolean;
+//    flagIHttp:Boolean;
     flagLog:  Boolean;
     contAuth: Integer;
-    contMain: Integer;
-    log: TStringList;
-//    tt: TCheck;
-    xhr: TIdhttp;
+//    contMain: Integer;
+//    log: TStringList;
+
   end;
 
 var
   MainForm: TMainForm;
-  closeForm : Boolean=false;
-  stopThread: boolean=false;
+  closeForm : Boolean = false;
+
 implementation
 
 {$R *.dfm}
@@ -91,35 +102,43 @@ begin
   end;
 end;
 
-procedure TMainForm.FormCreate(Sender: TObject);
+procedure TMainForm.exec(src: string);
 begin
-  cbb1.Items.Add('30 Minutos');
-  cbb1.Items.Add('1 Hora');
-  cbb1.Items.Add('2 Horas');
-  cbb1.Items.Add('6 Horas');
+  executeScript(src);
+end;
+
+procedure TMainForm.FormCreate(Sender: TObject);
+var
+  resource: TResourceStream;
+  auth_script: TStringlist;
+  i: integer;
+begin
+  loadConfig; // carrega perfil
+  auth_script := TStringList.Create;
+  resource := TResourceStream.Create(hInstance, 'auth_script', 'RT_STRING');
+  try
+    auth_script.LoadFromStream(resource);
+    for i := 0 to auth_script.Count-1 do
+    begin
+      if auth_script[i] <> '' then
+      begin
+        mainScript := mainScript+' '+auth_script[i];
+      end;
+    end;
+  finally
+    auth_script.Free;
+    resource.Free;
+  end;
 
   webbrowser1.navigate(authUrl);
-  flagAuth := False; // user autenticado
-  flagMain := True;  // thread principal
-  flagXhr  := False;
+  tmrMain.Interval := 3000;  // verifica usuario
 
-  flagLog  := true; // flag grava log em disco
-  contAuth := 0;     // tentativas de login
-  rp;
-
-  tmrMain.Enabled := True;  // verifica o estado
-
-//  tmrMain:
-//    verifica se maquina não esta autenticada ou não
-//    identifica redirect de authenticação ou bloqueio de url testada
-//  tmrGetAuth:
-//    verifica o resultado da tentativa de autenticação
-
+  flagLog := true;
+  contAuth := 0;
 end;
 
 procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
-  sp;
   if not closeForm then
     begin
       MainForm.Hide;
@@ -145,7 +164,7 @@ end;
 procedure TMainForm.mniSair1Click(Sender: TObject);
 begin
   tmrMain.Enabled := False;
-  flagMain := False;
+//  flagMain := False;
   closeForm := True;
   Close;
 end;
@@ -171,7 +190,7 @@ begin
       lbl2.Caption := 'Autenticado';
       writeLog('redirect: autenticado');
       trycn1.IconIndex := 1;
-      flagAuth := True;      ;
+      contAuth := 0;
     end;
 
     AUTH_NO:
@@ -179,13 +198,19 @@ begin
       lbl2.Caption := 'Desautenticado';
       writeLog('redirect: desautenticado');
       trycn1.IconIndex := 2;
-      flagAuth := False;
+
       if chk1.Checked then // mantém logado
       begin
-        webbrowser1.Refresh;
-        autentica;
-        contAuth := 1; // primeira tentativa
-        tmrGetAuth.Enabled := True; // tenta autenticar
+        if contAuth < 5 then
+          begin
+            webbrowser1.Refresh;
+            autentica;
+            Inc(contAuth); // primeira tentativa
+          end
+        else
+        begin
+          contAuth := 0;
+        end;
       end;
     end;
 
@@ -194,7 +219,6 @@ begin
       writeLog('redirect: ??');
       lbl2.Caption := '--';
       trycn1.IconIndex := 3;
-      flagAuth := False;
     end;
   else
     begin
@@ -222,50 +246,50 @@ begin
     begin
       Append(tFile);
     end;
-    Writeln(tFile, FormatDateTime('DD/MM/YYYY-HH:MM:SS', Now)+' - '+log);
+    Writeln(tFile, formatDateTime('DD/MM/YYYY-HH:MM:SS', Now)+' - '+log);
     Closefile(tFile);
   end;
 end;
 
-procedure TMainForm.tmrGetAuthTimer(Sender: TObject);
-var
-  isAuth: string;
-begin
-  if flagAuth then  // autenticado ?
-    begin
-      writeLog('autenticado');
-      tmrGetAuth.Enabled := False;
-    end
-  else
-  begin
-    inc(contAuth);
-    if contAuth > 3 then  // 10 tentativas
-    begin
-      writeLog('3 Tentativas');
-      tmrGetAuth.Enabled := False;
-    end;
-
-    isAuth := getElementValueById('isauth');
-
-    if isAuth <> '' then
-    begin
-      lbl2.Caption := isAuth;
-      writeLog('getAuth: '+isAuth);
-      tmrGetAuth.Enabled := False;
-      if isAuth = 'SUCCESS' then
-        begin
-          updateStatus(AUTH_YES);
-        end
-      else
-      begin
-        if isAuth = 'FAILURE' then //
-        begin
-          updateStatus(AUTH_NO);
-        end;
-      end
-    end;
-  end;
-end;
+//procedure TMainForm.tmrAuthenticatorTimer(Sender: TObject);
+//var
+//  isAuth: string;
+//begin
+//  if flagAuth then  // autenticado ?
+//    begin
+//      writeLog('autenticado');
+//      tmrAuthenticator.Enabled := False;
+//    end
+//  else
+//  begin
+//    inc(contAuth);
+//    if contAuth > 3 then  // 10 tentativas
+//    begin
+//      writeLog('3 Tentativas');
+//      tmrAuthenticator.Enabled := False;
+//    end;
+//
+//    isAuth := getElementValueById('isauth');
+//
+//    if isAuth <> '' then
+//    begin
+//      lbl2.Caption := isAuth;
+//      writeLog('getAuth: '+isAuth);
+//      tmrAuthenticator.Enabled := False;
+//      if isAuth = 'SUCCESS' then
+//        begin
+//          updateStatus(AUTH_YES);
+//        end
+//      else
+//      begin
+//        if isAuth = 'FAILURE' then //
+//        begin
+//          updateStatus(AUTH_NO);
+//        end;
+//      end
+//    end;
+//  end;
+//end;
 
 procedure TMainForm.tmrMainTimer(Sender: TObject);
 begin
@@ -273,6 +297,7 @@ begin
 //  tmrMain.Interval := 1800000; // meia hora
 //  tmrMain.Interval := 3600000;
 //  tmrMain.Interval := 10000;
+
   if cbb1.ItemIndex >= 0 then
     begin
       case cbb1.ItemIndex of
@@ -299,48 +324,39 @@ begin
     tmrMain.Interval := 3600000;
   end;
 
-  if flagMain then
-  begin
-    TThread.CreateAnonymousThread(
-      procedure
-      begin
-        try
-          flagMain := False;
-          try
-            idhttp1.Get(checkUrl);
-          except
-            on e:Exception do
-            begin
-              writeLog('exception: '+e.Message);
-            end
-          end;
-        finally
-//          idhttp1.Disconnect;
-//          idhttp1.Free;
-          flagMain := True;
-        end;
-      end
-    ).Start;
-  end;
+  // verifica autenticação apos o get, no redirect (IdHTTP1Redirect)
+  TThread.CreateAnonymousThread(
+    procedure
+    begin
+      try
+        idhttp1.Get(checkUrl);
+      except
+        on e:Exception do
+        begin
+          writeLog('exception: '+e.Message);
+        end
+      end;
+    end
+  ).Start;
 end;
 
 procedure TMainForm.IdHTTP1Redirect(Sender: TObject; var dest: string; var NumRedirect: Integer; var Handled: Boolean; var VMethod: string);
 begin
-
-  if TRegex.IsMatch(dest, authRegex) then
+  if TRegex.IsMatch(dest, authRgx) then
     begin
       // redirect da tela de autenticação
       updateStatus(AUTH_NO);
     end
   else
   begin
-    if TRegex.IsMatch(dest, blockRegex) then
+    if TRegex.IsMatch(dest, blockRgx) then
       begin
         // redirect de bloqueio
         updateStatus(AUTH_UNDEFINED);
       end
     else
     begin
+      // redirecionado para o endereco original(autenticado?)
       updateStatus(AUTH_YES);
     end;
   end;
@@ -349,8 +365,6 @@ end;
 procedure TMainForm.btn1Click(Sender: TObject);
 begin
   autentica;
-  contAuth := 1; // primeira tentativa
-  tmrGetAuth.Enabled := True; // tenta autenticar
 end;
 
 procedure TMainForm.cbb1Select(Sender: TObject);
@@ -379,20 +393,39 @@ begin
   end;
 end;
 
+procedure TMainForm.edtAuthRgxChange(Sender: TObject);
+begin
+  authRgx := edtAuthRgx.Text;
+end;
+
+procedure TMainForm.edtAuthUrlChange(Sender: TObject);
+begin
+  authUrl := edtAuthUrl.Text;
+end;
+
+procedure TMainForm.edtBlockRgxChange(Sender: TObject);
+begin
+  blockRgx := edtBlockRgx.Text;
+end;
+
+procedure TMainForm.edtCheckUrlChange(Sender: TObject);
+begin
+  checkUrl := edtcheckUrl.Text;
+end;
+
 procedure TMainForm.autentica;
 var
   u: string;
   p: String;
 begin
-  executeScript(mainScript);
-
+//  exec(mainScript);
   if edit1.Text <> '' then
     begin
       u := '"'+edit1.Text+'"';
     end
   else
   begin
-    writeLog('usuario errado');
+    writeLog('Usuario em branco!');
     edit1.SetFocus;
     exit;
   end;
@@ -403,12 +436,217 @@ begin
     end
   else
   begin
-    writeLog('usuario errado');
+    writeLog('Senha em branco!');
     edit2.SetFocus;
     exit;
   end;
-  executeScript('auth({id:'+u+', pass:'+p+'})');
+
+  exec('auth({id:'+u+', pass:'+p+'})');
+
+  if not tmrMain.Enabled then
+  begin
+    tmrMain.Enabled := True;
+  end;
+
+//  tmrMain.Interval := 3000;
   writeLog('auth()');
 end;
 
+procedure TMainForm.verifica;
+var
+  isAuth: String;
+begin
+  isAuth := getElementValueById('isauth');
+
+  TThread.CreateAnonymousThread(
+    procedure
+    begin
+      try
+        sleep(3000);
+        if isAuth <> '' then
+        begin
+          lbl2.Caption := isAuth;
+          writeLog('verifica: '+isAuth);
+
+          if isAuth = 'SUCCESS' then
+            begin
+              updateStatus(AUTH_YES);
+            end
+          else
+          begin
+            if isAuth = 'FAILURE' then //
+            begin
+              updateStatus(AUTH_NO);
+            end;
+          end
+        end;
+      except
+        on e:Exception do
+        begin
+          writeLog('exception: '+e.Message);
+        end
+      end;
+    end
+  ).Start;
+end;
+
+procedure TMainForm.saveConfig;
+var
+  config: TConfig;
+  i: Integer;
+  enc :TBytes;
+begin
+  config.keep := chk1.Checked;   // mantém
+  config.tout := cbb1.ItemIndex; // timeout
+
+  // usuario
+  enc := TEncoding.UTF8.GetBytes(edit1.Text);
+  config.ip1[0] := TEncoding.UTF8.GetCharCount(enc);
+  if config.ip1[0] > length(config.ip1) then
+    begin
+      exit;
+    end
+  else
+  begin
+    for I := Low(enc) to High(enc) do
+    begin
+      config.ip1[i+1] := enc[i];
+    end;
+  end;
+
+  // senha
+  enc := TEncoding.UTF8.GetBytes(edit2.Text);
+  config.ip2[0] := TEncoding.UTF8.GetCharCount(enc);
+  if config.ip2[0] > length(config.ip2) then
+    begin
+      exit;
+    end
+  else
+  begin
+    for I := Low(enc) to High(enc) do
+    begin
+      config.ip2[i+1] := enc[i];
+    end;
+  end;
+
+//  enc := TEncoding.UTF8.GetBytes('http://10.12.5.254/hotspot/PortalMain');
+  enc := TEncoding.UTF8.GetBytes(authUrl);
+  config.authUrl[0] := TEncoding.UTF8.GetCharCount(enc);
+  // TODO validação decente
+  if config.authUrl[0] > length(config.authUrl) then
+    begin
+      exit;
+    end
+  else
+  begin
+    for I := Low(enc) to High(enc) do
+    begin
+      config.authUrl[i+1] := enc[i];
+    end;
+  end;
+
+  // url de teste
+  enc := TEncoding.UTF8.GetBytes(checkUrl);
+  config.checkUrl[0] := TEncoding.UTF8.GetCharCount(enc);
+  if config.checkUrl[0] > length(config.checkUrl) then
+    begin
+      exit;
+    end
+  else
+  begin
+    for I := Low(enc) to High(enc) do
+    begin
+      config.checkUrl[i+1] := enc[i];
+    end;
+  end;
+
+  // expressão de autenticação
+  enc := TEncoding.UTF8.GetBytes(authRgx);
+  config.authRgx[0] := TEncoding.UTF8.GetCharCount(enc);
+  if config.authRgx[0] > length(config.authRgx) then
+    begin
+      exit;
+    end
+  else
+  begin
+    for I := Low(enc) to High(enc) do
+    begin
+      config.authRgx[i+1] := enc[i];
+    end;
+  end;
+
+  // expressão de bloqueio
+  enc := TEncoding.UTF8.GetBytes(blockRgx);
+  config.blockRgx[0] := TEncoding.UTF8.GetCharCount(enc);
+  if config.blockRgx[0] > length(config.blockRgx) then
+    begin
+      exit;
+    end
+  else
+  begin
+    for I := Low(enc) to High(enc) do
+    begin
+      config.blockRgx[i+1] := enc[i];
+    end;
+  end;
+
+  writeConfig(config);
+end;
+
+procedure TMainForm.loadConfig;
+var
+  config: TConfig;
+  i: Integer;
+  dec: TBytes;
+begin
+  config := readConfig();
+
+  chk1.Checked := config.keep;
+  cbb1.ItemIndex := config.tout;
+
+  // usuario
+  setlength(dec, config.ip1[0]);
+  for I := 1 to config.ip1[0] do
+  begin
+    dec[i-1] := config.ip1[i];
+  end;
+  edit1.Text := TEncoding.UTF8.GetString(dec);
+
+  // senha
+  setlength(dec, config.ip2[0]);
+  for I := 1 to config.ip2[0] do
+  begin
+    dec[i-1] := config.ip2[i];
+  end;
+  edit2.Text := TEncoding.UTF8.GetString(dec);
+
+
+  setlength(dec, config.authUrl[0]);
+  for I := 1 to config.authUrl[0] do
+  begin
+    dec[i-1] := config.authUrl[i];
+  end;
+  edtAuthUrl.Text := TEncoding.UTF8.GetString(dec);
+
+  setlength(dec, config.checkUrl[0]);
+  for I := 1 to config.checkUrl[0] do
+  begin
+    dec[i-1] := config.checkUrl[i];
+  end;
+  edtCheckUrl.Text := TEncoding.UTF8.GetString(dec);
+
+  setlength(dec, config.authRgx[0]);
+  for I := 1 to config.authRgx[0] do
+  begin
+    dec[i-1] := config.authRgx[i];
+  end;
+  edtAuthRgx.Text := TEncoding.UTF8.GetString(dec);
+
+  setlength(dec, config.blockRgx[0]);
+  for I := 1 to config.blockRgx[0] do
+  begin
+    dec[i-1] := config.blockRgx[i];
+  end;
+  edtBlockRgx.Text := TEncoding.UTF8.GetString(dec);
+end;
 end.

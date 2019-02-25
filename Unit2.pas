@@ -10,42 +10,72 @@ uses
   IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL, IdSSLOpenSSL;
 
 type
-
+  TConfig = record
+    authUrl: array [0..99]of byte;  // url de autenticacao
+    checkUrl: array [0..99]of byte;  // url de check
+    authRgx: array [0..99]of byte;
+    blockRgx: array [0..99]of byte;  // padrao para redirect de bloqueio
+    ip1: array [0..29]of byte;
+    ip2: array [0..9]of byte;
+    keep: Boolean;
+    tout: Integer;
+  end;
   TAuthCP = (AUTH_YES, AUTH_NO, AUTH_UNDEFINED);
 
   function executeScript(script: string): Boolean;
   function getElementValueById(Id : string):string;
-  procedure sp;
-  function rp:TStringList;
-  function stringToHex(S: String): string;
-  function hexToString(H: String): String;
+  procedure writeConfig(config: TConfig);
+  function readConfig: TConfig;
 
 var
+  template: array [0..447] of byte = (
+    $25, $68, $74, $74, $70, $3a, $2f, $2f, $31, $30, $2e, $31, $32, $2e, $35, $2e, $32, $35, $34, $2f, $68, $6f, $74, $73,
+    $70, $6f, $74, $2f, $50, $6f, $72, $74, $61, $6c, $4d, $61, $69, $6e, $00, $00, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff,
+    $eb, $70, $35, $75, $47, $75, $35, $75, $00, $00, $00, $00, $00, $00, $00, $00, $c8, $11, $03, $00, $00, $00, $00, $00,
+    $00, $00, $00, $00, $00, $00, $00, $00, $48, $13, $03, $00, $00, $00, $00, $00, $10, $60, $00, $80, $00, $00, $00, $00,
+    $01, $00, $00, $00, $16, $68, $74, $74, $70, $3a, $2f, $2f, $77, $77, $77, $2e, $79, $6f, $75, $74, $75, $62, $65, $2e,
+    $63, $6f, $6d, $00, $a0, $61, $6c, $77, $01, $00, $00, $00, $58, $f4, $19, $00, $00, $81, $36, $75, $59, $85, $af, $27,
+    $fe, $ff, $ff, $ff, $44, $f2, $19, $00, $ef, $67, $35, $75, $c0, $db, $72, $73, $00, $00, $00, $00, $85, $00, $00, $00,
+    $2c, $28, $04, $fe, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $10, $dd, $fd, $03, $88, $f4, $19, $00,
+    $85, $00, $00, $00, $e8, $0e, $25, $02, $27, $5e, $5c, $44, $2b, $31, $30, $5c, $2e, $31, $32, $5c, $2e, $35, $5c, $2e,
+    $32, $35, $34, $5c, $2f, $68, $6f, $74, $73, $70, $6f, $74, $5c, $2f, $50, $6f, $72, $74, $61, $6c, $4d, $61, $69, $6e,
+    $88, $f4, $19, $00, $10, $dd, $fd, $03, $d0, $73, $56, $00, $70, $00, $00, $00, $55, $0d, $97, $ff, $00, $00, $2b, $02,
+    $05, $00, $00, $00, $cd, $77, $5c, $00, $10, $dd, $fd, $03, $48, $11, $55, $00, $85, $00, $00, $00, $10, $dd, $fd, $03,
+    $88, $f4, $19, $00, $29, $06, $01, $10, $38, $9d, $36, $02, $29, $5e, $5c, $44, $2b, $31, $30, $5c, $2e, $31, $32, $5c,
+    $2e, $35, $5c, $2e, $32, $35, $34, $5c, $2f, $55, $73, $65, $72, $43, $68, $65, $63, $6b, $5c, $2f, $50, $6f, $72, $74,
+    $61, $6c, $4d, $61, $69, $6e, $00, $00, $88, $f4, $19, $00, $10, $dd, $fd, $03, $04, $f4, $19, $00, $7c, $83, $54, $00,
+    $85, $00, $00, $00, $01, $00, $00, $00, $10, $dd, $fd, $03, $00, $00, $2b, $02, $4a, $9d, $36, $02, $00, $00, $01, $00,
+    $0a, $00, $04, $0e, $01, $00, $00, $00, $40, $33, $c3, $02, $6c, $0c, $59, $00, $00, $00, $00, $00, $ff, $ff, $ff, $ff,
+    $00, $00, $00, $00, $00, $00, $10, $00, $a4, $1b, $00, $00, $05, $00, $00, $00, $68, $f3, $19, $00, $b7, $5b, $00, $75,
+    $40, $33, $c3, $02, $00, $00, $00, $00, $00, $cb, $8d, $52, $ff, $ff, $ff, $ff
+  );
+
+  // $25, $68, $74, $74, $70, $3a, $2f, $2f, $31, $30, $2e, $31, $32, $2e, $35, $2e, $32, $35, $34, $2f, $68, $6f, $74, $73,
+  // $70, $6f, $74, $2f, $50, $6f, $72, $74, $61, $6c, $4d, $61, $69, $6e, $00, $00, $00, $0b, $1d, $00, $02, $00, $04, $06,
+  // $13, $00, $00, $00, $76, $01, $04, $73, $a6, $1c, $04, $1c, $48, $0f, $1f, $00, $06, $00, $07, $01, $a6, $1c, $00, $00,
+  // $a6, $1c, $1c, $ff, $ff, $ff, $ff, $ff, $e0, $27, $00, $00, $70, $00, $00, $00, $48, $0f, $1f, $00, $00, $00, $00, $00,
+  // $a6, $1c, $1c, $ff, $ff, $ff, $ff, $ff, $e0, $27, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $98, $52, $fe, $03,
+  // $a6, $1c, $1c, $ff, $02, $00, $00, $00, $8e, $fe, $ff, $ff, $04, $1c, $04, $00, $00, $0b, $1d, $00, $b4, $04, $fe, $03,
+  // $03, $00, $00, $00, $00, $00, $fe, $03, $35, $6f, $b0, $74, $95, $17, $01, $ea, $d0, $cf, $6e, $07, $a0, $00, $00, $80,
+  // $00, $00, $00, $00, $a6, $1c, $04, $1c, $10, $00, $00, $00, $01, $00, $00, $00, $7f, $00, $00, $00, $04, $00, $00, $00,
+  // $c0, $00, $fe, $03, $94, $02, $fe, $03, $27, $15, $6a, $75, $00, $00, $00, $00, $00, $00, $00, $00, $0a, $00, $05, $00,
+  // $62, $00, $00, $40, $00, $00, $00, $00, $88, $08, $fe, $03, $00, $00, $00, $00, $28, $00, $00, $00, $00, $00, $15, $02,
+  // $04, $00, $00, $00, $a8, $52, $fe, $03, $20, $00, $00, $00, $01, $00, $00, $00, $00, $50, $af, $02, $76, $03, $bd, $00,
+  // $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $10, $00, $38, $2e, $00, $00, $05, $00, $00, $00,
+  // $68, $f3, $19, $00, $b7, $5b, $6a, $75, $00, $50, $af, $02, $00, $00, $00, $00, $27, $92, $d6, $62, $15, $02, $00, $00,
+  // $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $90, $52, $fe, $03, $00, $00, $00, $00, $fe, $ff, $ff, $ff,
+  // $30, $f3, $19, $00, $00, $50, $f6, $76, $ff, $ff, $ff, $ff
+
   CGID_DocHostCommandHandler: PGUID;
-
-  checkUrl: string = '';
-
+  checkUrl: string = ''; // url pra testar
   authUrl: string = 'http://'+chr(49)+chr(48)+chr(46)+chr(49)+chr(50)+chr(46)+chr(53)+chr(46)+chr(50)+chr(53)+chr(52)+'/hotspot/PortalMain';
-  authRegex: string =  '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/hotspot\/PortalMain';    // regex do hotpost
-  blockRegex: string = '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/UserCheck\/PortalMain'; // regex do usercheck
-  sBin: string = 'sbin';
-
-  mainScript: string = ''+
-    'var isauth=document.createElement("input");function auth(e){var t="IID=-1&'+
-    'UserOption=OK&UserID="+e.id+"&Password="+e.pass,a=new XMLHttpRequest;a.ope'+
-    'n("POST","/hotspot/data/GetUserCheckUserChoiceData",!0),a.setRequestHeader'+
-    '("Content-type","application/x-www-form-urlencoded"),a.onreadystatechange='+
-    'function(){4==a.readyState&&(document.getElementById("isauth").value=JSON.'+
-    'parse(a.responseText).ReturnCode)},a.send(t)}isauth.setAttribute("type","h'+
-    'idden"),isauth.setAttribute("id","isauth"),isauth.setAttribute("value","")'+
-    ',document.body.appendChild(isauth);';
-
+  authRgx: string =  '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/hotspot\/PortalMain';    // regex do hotpost
+  blockRgx: string = '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/UserCheck\/PortalMain'; // regex do usercheck
+  mainScript: string = ''; // js de autenticação
 implementation
 
 uses
   Unit1;
-
-
 
 function executeScript(script: string): Boolean;
 var
@@ -107,72 +137,44 @@ begin
   end;
 end;
 
-procedure sp;
+procedure writeConfig(config: TConfig);
 var
-  st: TStringList;
+  fs: TFileStream;
 begin
-  if MainForm.chk1.Checked then
+  fs := TFileStream.Create('data.dat', fmCreate or fmOpenWrite);
+  try
+    fs.Write(config, sizeof(config));
+  finally
+    fs.Free;
+  end;
+end;
+
+function readConfig:TConfig;
+type
+  PConfig = ^TConfig;
+var
+  fs: TFileStream;
+  config: TConfig;
+  pc: PConfig;
+  fileName: String;
+begin
+  fileName := 'data.dat';
+
+  if FileExists(fileName) then
     begin
-      st := TStringList.Create;
-      st.Add(BoolToStr(MainForm.chk1.Checked));
-      st.Add(IntToStr(mainForm.cbb1.ItemIndex));
-      st.Add(MainForm.edit1.Text);
-      st.Add(MainForm.edit2.Text);
-      st.Add(authUrl);
-      st.Add(authRegex);
-      st.Add(blockRegex);
-      st.Text := StringOf(TEncoding.Convert(TEncoding.Unicode, TEncoding.UTF8, BytesOf(st.Text)));
-      st.SaveToFile(sBin);
+      fs := TFileStream.Create('data.dat', fmOpenRead);
+      try
+        fs.Read(config, fs.size);
+      finally
+        fs.Free;
+      end;
     end
   else
   begin
-    if FileExists(sBin) then
-    begin
-      DeleteFile(sBin);
-    end;
+    pc := @config;
+    CopyMemory(pc, @template, SizeOf(template));  // TODO arquivo aumentou
   end;
-end;
-
-function rp:TStringList;
-var
-  st: TStringList;
-begin
-  st := TStringList.Create;
-  if FileExists(sBin) then
-  begin
-    st.LoadFromFile(sBin);
-    st.Text := StringOf(TEncoding.Convert(TEncoding.UTF8, TEncoding.Unicode, BytesOf(st.Text)));
-
-    if (st.Count > 1) and (st[0]  <> '') then
-    begin
-      mainForm.chk1.Checked := strToBool(st[0]);
-      mainForm.cbb1.ItemIndex := StrToInt(st[1]);
-      mainForm.edit1.Text := stringReplace(st[2],'"','',[rfReplaceAll]);
-      mainForm.edit2.Text := stringReplace(st[3],'"','',[rfReplaceAll]);
-    end;
-  end;
-
-  result := st;
-end;
-
-function stringToHex(S: String): string;
-var I: Integer;
-begin
-  Result:= '';
-  for I := 1 to length (S) do
-  begin
-    Result:= Result+IntToHex(ord(S[i]),2);
-  end;
-end;
-
-function hexToString(H: String): String;
-var I: Integer;
-begin
-  Result:= '';
-  for I := 1 to length(H) div 2 do
-  begin
-    Result:= Result+Char(StrToInt('$'+Copy(H,(I-1)*2+1,2)));
-  end;
+  result := config;
 end;
 
 end.

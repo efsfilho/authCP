@@ -2,8 +2,8 @@ object MainForm: TMainForm
   Left = 0
   Top = 0
   BorderStyle = bsDialog
-  ClientHeight = 166
-  ClientWidth = 282
+  ClientHeight = 168
+  ClientWidth = 274
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -19,7 +19,7 @@ object MainForm: TMainForm
   object lbl1: TLabel
     Left = 8
     Top = 140
-    Width = 9
+    Width = 8
     Height = 13
     Caption = '::'
   end
@@ -31,7 +31,7 @@ object MainForm: TMainForm
     Caption = '                                                                '
   end
   object btn1: TButton
-    Left = 143
+    Left = 135
     Top = 95
     Width = 75
     Height = 25
@@ -41,12 +41,12 @@ object MainForm: TMainForm
   end
   object WebBrowser1: TWebBrowser
     Left = 8
-    Top = 213
-    Width = 300
-    Height = 150
+    Top = 173
+    Width = 553
+    Height = 171
     TabOrder = 1
     ControlData = {
-      4C000000021F0000810F00000000000000000000000000000000000000000000
+      4C00000027390000AC1100000000000000000000000000000000000000000000
       000000004C000000000000000000000001000000E0D057007335CF11AE690800
       2B2E126208000000000000004C0000000114020000000000C000000000000046
       8000000000000000000000000000000000000000000000000000000000000000
@@ -83,6 +83,43 @@ object MainForm: TMainForm
     Style = csDropDownList
     TabOrder = 5
     OnSelect = cbb1Select
+    Items.Strings = (
+      '30 Minutos'
+      '1 Hora'
+      '2 Horas'
+      '6 Horas')
+  end
+  object edtAuthUrl: TEdit
+    Left = 272
+    Top = 15
+    Width = 185
+    Height = 21
+    TabOrder = 6
+    OnChange = edtAuthUrlChange
+  end
+  object edtCheckUrl: TEdit
+    Left = 272
+    Top = 42
+    Width = 185
+    Height = 21
+    TabOrder = 7
+    OnChange = edtCheckUrlChange
+  end
+  object edtAuthRgx: TEdit
+    Left = 272
+    Top = 69
+    Width = 185
+    Height = 21
+    TabOrder = 8
+    OnChange = edtAuthRgxChange
+  end
+  object edtBlockRgx: TEdit
+    Left = 272
+    Top = 96
+    Width = 185
+    Height = 21
+    TabOrder = 9
+    OnChange = edtBlockRgxChange
   end
   object trycn1: TTrayIcon
     Icon.Data = {
@@ -2358,12 +2395,12 @@ object MainForm: TMainForm
     PopupMenu = pm1
     Visible = True
     OnClick = trycn1Click
-    Left = 360
-    Top = 72
+    Left = 616
+    Top = 128
   end
   object pm1: TPopupMenu
-    Left = 304
-    Top = 72
+    Left = 560
+    Top = 128
     object mnieste1: TMenuItem
       Caption = 'Teste'
       OnClick = mnieste1Click
@@ -2372,13 +2409,6 @@ object MainForm: TMainForm
       Caption = 'Sair'
       OnClick = mniSair1Click
     end
-  end
-  object tmrGetAuth: TTimer
-    Enabled = False
-    Interval = 3000
-    OnTimer = tmrGetAuthTimer
-    Left = 288
-    Top = 160
   end
   object IdHTTP1: TIdHTTP
     IOHandler = IdSSLIOHandlerSocketOpenSSL1
@@ -2397,8 +2427,8 @@ object MainForm: TMainForm
     Request.Ranges = <>
     HTTPOptions = [hoForceEncodeParams]
     OnRedirect = IdHTTP1Redirect
-    Left = 400
-    Top = 8
+    Left = 656
+    Top = 64
   end
   object IdSSLIOHandlerSocketOpenSSL1: TIdSSLIOHandlerSocketOpenSSL
     MaxLineAction = maException
@@ -2407,21 +2437,22 @@ object MainForm: TMainForm
     SSLOptions.Mode = sslmUnassigned
     SSLOptions.VerifyMode = []
     SSLOptions.VerifyDepth = 0
-    Left = 304
-    Top = 8
+    Left = 560
+    Top = 64
   end
   object tmrMain: TTimer
+    Interval = 3000
     OnTimer = tmrMainTimer
-    Left = 344
-    Top = 160
+    Left = 616
+    Top = 184
   end
   object il1: TImageList
     Height = 64
     Width = 64
-    Left = 408
-    Top = 72
+    Left = 664
+    Top = 128
     Bitmap = {
-      494C01010400F800280140004000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C01010400F800400140004000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000000100008000000001002000000000000000
       0200000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

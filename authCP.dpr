@@ -2,6 +2,8 @@ program authCP;
 
 
 
+{$R 'resources.res' 'resources.rc'}
+
 uses
   Windows,
   SysUtils,
@@ -9,6 +11,7 @@ uses
   Unit1 in 'Unit1.pas' {MainForm},
   Unit2 in 'Unit2.pas';
 
+{$R 'resources.res' 'resources.rc'}
 {$R *.res}
 
 begin
@@ -25,7 +28,7 @@ begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TMainForm, MainForm);
-//  Application.ShowMainForm := False;
+  //  Application.ShowMainForm := False;
 //  MainForm.ShowModal;
   Application.Run;
 end.

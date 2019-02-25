@@ -1,0 +1,1 @@
+auth_script       RT_STRING       scripts\index.js        // script de criação do usuario
