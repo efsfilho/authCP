@@ -2,8 +2,8 @@ object MainForm: TMainForm
   Left = 0
   Top = 0
   BorderStyle = bsDialog
-  ClientHeight = 168
-  ClientWidth = 274
+  ClientHeight = 331
+  ClientWidth = 734
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -58,6 +58,7 @@ object MainForm: TMainForm
     Width = 121
     Height = 21
     TabOrder = 2
+    OnChange = Edit1Change
   end
   object Edit2: TEdit
     Left = 8
@@ -66,6 +67,7 @@ object MainForm: TMainForm
     Height = 21
     PasswordChar = '*'
     TabOrder = 3
+    OnChange = Edit2Change
   end
   object chk1: TCheckBox
     Left = 8
@@ -74,6 +76,7 @@ object MainForm: TMainForm
     Height = 17
     Caption = 'Mant'#233'm Logado'
     TabOrder = 4
+    OnMouseLeave = chk1MouseLeave
   end
   object cbb1: TComboBox
     Left = 8
@@ -2452,7 +2455,7 @@ object MainForm: TMainForm
     Left = 664
     Top = 128
     Bitmap = {
-      494C01010400F800400140004000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C01010400F800440140004000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000000100008000000001002000000000000000
       0200000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

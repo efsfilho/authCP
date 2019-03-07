@@ -68,9 +68,9 @@ var
 
   CGID_DocHostCommandHandler: PGUID;
   checkUrl: string = ''; // url pra testar
-  authUrl: string = 'http://'+chr(49)+chr(48)+chr(46)+chr(49)+chr(50)+chr(46)+chr(53)+chr(46)+chr(50)+chr(53)+chr(52)+'/hotspot/PortalMain';
-  authRgx: string =  '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/hotspot\/PortalMain';    // regex do hotpost
-  blockRgx: string = '^\D+'+chr(49)+chr(48)+'\.12\.5\.'+chr(50)+chr(53)+chr(52)+'\/UserCheck\/PortalMain'; // regex do usercheck
+  authUrl: string = '';
+  authRgx: string = ''; // regex do hotpost
+  blockRgx: string = ''; // regex do usercheck
   mainScript: string = ''; // js de autenticação
 implementation
 
@@ -83,9 +83,12 @@ var
   doc : IHTMLDocument2;
 begin
   doc := MainForm.webBrowser1.Document as IHTMLDocument2;
-  if Assigned(doc) then
-    begin
+//  if Assigned(doc) then
+//    begin
+//      win := doc.parentWindow as IHTMLWindow2;
+//      if supports(doc.parentWindow, IHTMLWindow2, win) then
       win := doc.parentWindow;
+
       if script <> '' then
         begin
           Result := True;
@@ -102,11 +105,11 @@ begin
       begin
         Result := False;
       end;
-    end
-  else
-  begin
-    Result := False;
-  end;
+//    end
+//  else
+//  begin
+//    Result := False;
+//  end;
 end;
 
 function getElementValueById(id : string):string;

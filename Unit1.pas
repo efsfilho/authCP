@@ -65,6 +65,9 @@ type
     procedure edtCheckUrlChange(Sender: TObject);
     procedure edtAuthRgxChange(Sender: TObject);
     procedure edtBlockRgxChange(Sender: TObject);
+    procedure chk1MouseLeave(Sender: TObject);
+    procedure Edit1Change(Sender: TObject);
+    procedure Edit2Change(Sender: TObject);
 
   private
 
@@ -83,7 +86,7 @@ type
 var
   MainForm: TMainForm;
   closeForm : Boolean = false;
-
+  i: integer=0;
 implementation
 
 {$R *.dfm}
@@ -113,7 +116,7 @@ var
   auth_script: TStringlist;
   i: integer;
 begin
-  loadConfig; // carrega perfil
+  loadConfig; // carrega configurações
   auth_script := TStringList.Create;
   resource := TResourceStream.Create(hInstance, 'auth_script', 'RT_STRING');
   try
@@ -139,6 +142,7 @@ end;
 
 procedure TMainForm.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
+  saveConfig;
   if not closeForm then
     begin
       MainForm.Hide;
@@ -203,7 +207,7 @@ begin
       begin
         if contAuth < 5 then
           begin
-            webbrowser1.Refresh;
+            //webbrowser1.Refresh;
             autentica;
             Inc(contAuth); // primeira tentativa
           end
@@ -325,15 +329,18 @@ begin
   end;
 
   // verifica autenticação apos o get, no redirect (IdHTTP1Redirect)
+
   TThread.CreateAnonymousThread(
     procedure
     begin
       try
-        idhttp1.Get(checkUrl);
+
+          idhttp1.Get(checkUrl);
+
       except
         on e:Exception do
         begin
-          writeLog('exception: '+e.Message);
+          writeLog('exception -> tmrMain: '+e.Message);
         end
       end;
     end
@@ -391,26 +398,46 @@ begin
       tmrMain.Interval := 43200000;
     end;
   end;
+  saveConfig;
+end;
+
+procedure TMainForm.chk1MouseLeave(Sender: TObject);
+begin
+  saveConfig;
+end;
+
+procedure TMainForm.Edit1Change(Sender: TObject);
+begin
+  saveConfig
+end;
+
+procedure TMainForm.Edit2Change(Sender: TObject);
+begin
+  saveConfig;
 end;
 
 procedure TMainForm.edtAuthRgxChange(Sender: TObject);
 begin
   authRgx := edtAuthRgx.Text;
+  saveConfig;
 end;
 
 procedure TMainForm.edtAuthUrlChange(Sender: TObject);
 begin
   authUrl := edtAuthUrl.Text;
+  saveConfig;
 end;
 
 procedure TMainForm.edtBlockRgxChange(Sender: TObject);
 begin
   blockRgx := edtBlockRgx.Text;
+  saveConfig;
 end;
 
 procedure TMainForm.edtCheckUrlChange(Sender: TObject);
 begin
   checkUrl := edtcheckUrl.Text;
+  saveConfig;
 end;
 
 procedure TMainForm.autentica;
@@ -483,13 +510,14 @@ begin
       except
         on e:Exception do
         begin
-          writeLog('exception: '+e.Message);
+          writeLog('exception -> verifica: '+e.Message);
         end
       end;
     end
   ).Start;
 end;
 
+// Salva configurações
 procedure TMainForm.saveConfig;
 var
   config: TConfig;
